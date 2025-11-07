@@ -1,6 +1,6 @@
 # Ankore Fresh Ltd
 
-A new Flutter project.
+Dealing in selling fresh fruits and vegetables.
 
 ## Getting Started
 
