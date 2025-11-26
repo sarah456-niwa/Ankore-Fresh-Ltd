@@ -15,6 +15,14 @@ class AnkoleFreshApp extends StatelessWidget {
       title: 'Ankore Fresh',
       theme: ThemeData(
         primarySwatch: Colors.green,
+
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: AppConstants.primaryColor,
+          unselectedItemColor: Colors.grey,
+          showSelectedLabels: true,
+          showUnselectedLabels: true,
+        ),
       ),
       home: const SplashScreen(),
       debugShowCheckedModeBanner: false,

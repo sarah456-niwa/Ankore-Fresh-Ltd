@@ -9,7 +9,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ankore Fresh'),
+        title: const Text('Ankore Fresh LTD'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
@@ -61,7 +61,7 @@ class HomeScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
-            
+
           ),
         ],
       ),
