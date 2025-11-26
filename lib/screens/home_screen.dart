@@ -9,7 +9,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ankole Fresh'),
+        title: const Text('Ankore Fresh'),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
@@ -35,7 +35,7 @@ class HomeScreen extends StatelessWidget {
             ),
             SizedBox(height: 20),
             Text(
-              'Welcome to Ankole Fresh!',
+              'Welcome to Ankore Fresh!',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
@@ -57,6 +57,10 @@ class HomeScreen extends StatelessWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
+          ),
+                    BottomNavigationBarItem(
+            icon: Icon(Icons.cart),
+            label: 'Cart',
           ),
         ],
       ),

@@ -22,7 +22,7 @@ class AuthScreen extends StatelessWidget {
               ),
               const SizedBox(height: 40),
               const Text(
-                'Join Ankole Fresh',
+                'Join Ankore Fresh',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
