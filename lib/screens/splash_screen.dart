@@ -27,7 +27,7 @@ class SplashScreen extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             const Text(
-              'Ankole Fresh',
+              'Ankore Fresh',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 32,

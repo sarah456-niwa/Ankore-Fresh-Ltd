@@ -55,12 +55,13 @@ class HomeScreen extends StatelessWidget {
             label: 'Products',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Cart',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person),
             label: 'Profile',
-          ),
-                    BottomNavigationBarItem(
-            icon: Icon(Icons.cart),
-            label: 'Cart',
+            
           ),
         ],
       ),

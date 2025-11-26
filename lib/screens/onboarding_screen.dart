@@ -25,7 +25,7 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40),
                     const Text(
-                      'Welcome to Ankole Fresh',
+                      'Welcome to Ankore Fresh',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
