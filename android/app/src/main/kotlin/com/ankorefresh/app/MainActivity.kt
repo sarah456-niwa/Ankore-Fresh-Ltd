@@ -1,4 +1,4 @@
-package com.example.my_profile_card
+package com.ankorefresh.app
 
 import io.flutter.embedding.android.FlutterActivity
 

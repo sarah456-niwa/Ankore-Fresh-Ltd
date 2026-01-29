@@ -18,7 +18,7 @@ class AnkoleFreshApp extends StatelessWidget {
 
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
-          selectedItemColor: AppConstants.primaryColor,
+          selectedItemColor: Colors.green,
           unselectedItemColor: Colors.grey,
           showSelectedLabels: true,
           showUnselectedLabels: true,

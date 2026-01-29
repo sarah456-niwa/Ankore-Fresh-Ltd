@@ -51,6 +51,10 @@ class HomeScreen extends StatelessWidget {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.search),   
+            label: 'Search',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.shopping_basket),
             label: 'Products',
           ),

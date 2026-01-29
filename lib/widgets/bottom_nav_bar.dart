@@ -10,7 +10,7 @@ class CustomBottomNavBar extends StatelessWidget {
   return BottomNavigationBar(
     type: BottomNavigationBarType.fixed,
     backgroundColor: Colors.white,
-    selectedItemColor: AppConstants.primaryColor,
+    selectedItemColor: Colors.green,
     unselectedItemColor: Colors.grey,
     currentIndex: 0,
     onTap: (index) {
@@ -20,6 +20,10 @@ class CustomBottomNavBar extends StatelessWidget {
       BottomNavigationBarItem(
         icon: Icon(Icons.home),
         label: 'Home',
+      )
+      BottomNavigationBarItem(
+        icon: Icon(Icons.search),   
+        label: 'Search',
       ),
       BottomNavigationBarItem(
         icon: Icon(Icons.shopping_basket),
