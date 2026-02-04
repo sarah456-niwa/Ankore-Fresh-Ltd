@@ -1,7 +1,7 @@
 // screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'forgot_password_screen.dart';
-import '../home_screen.dart';
+import '../main_app_screen.dart'; // Add this import
 
 class LoginScreen extends StatelessWidget {
   LoginScreen({super.key});
@@ -12,10 +12,12 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Sign In'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -28,6 +30,15 @@ class LoginScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Sign in to your account to continue',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
               ),
             ),
             const SizedBox(height: 40),
@@ -54,7 +65,7 @@ class LoginScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => ForgotPasswordScreen()),
+                    MaterialPageRoute(builder: (context) => const ForgotPasswordScreen()),
                   );
                 },
                 child: const Text('Forgot Password?'),
@@ -65,7 +76,7 @@ class LoginScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => const MainAppScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(

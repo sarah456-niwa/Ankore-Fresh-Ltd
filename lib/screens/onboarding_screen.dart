@@ -1,7 +1,7 @@
 // screens/onboarding_screen.dart
 import 'package:flutter/material.dart';
 import 'auth/auth_screen.dart';
-import 'home_screen.dart';
+import 'main_app_screen.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({super.key});
@@ -9,6 +9,7 @@ class OnboardingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -25,7 +26,7 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 40),
                     const Text(
-                      'Welcome to Ankore Fresh',
+                      'Welcome to Ankole Fresh',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -35,7 +36,7 @@ class OnboardingScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 20),
                     const Text(
-                      'Get fresh fruits and vegetables delivered to your doorstep.',
+                      'Get fresh fruits and vegetables delivered to your doorstep. Order easily, track deliveries, and enjoy quality produce.',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.grey,
@@ -59,15 +60,21 @@ class OnboardingScreen extends StatelessWidget {
                       backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                       minimumSize: const Size(double.infinity, 50),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    child: const Text('Get Started'),
+                    child: const Text(
+                      'Get Started',
+                      style: TextStyle(fontSize: 16),
+                    ),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => HomeScreen()),
+                        MaterialPageRoute(builder: (context) => const MainAppScreen()),
                       );
                     },
                     child: const Text(

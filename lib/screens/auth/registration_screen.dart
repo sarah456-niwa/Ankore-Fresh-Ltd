@@ -16,6 +16,7 @@ class RegistrationScreen extends StatelessWidget {
         title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -28,6 +29,7 @@ class RegistrationScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
             ),
             const SizedBox(height: 10),
@@ -68,7 +70,7 @@ class RegistrationScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => VerificationScreen()),
+                  MaterialPageRoute(builder: (context) => const VerificationScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(

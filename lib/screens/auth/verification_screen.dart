@@ -1,6 +1,6 @@
 // screens/auth/verification_screen.dart
 import 'package:flutter/material.dart';
-import '../home_screen.dart';
+import '../main_app_screen.dart'; // Add this import
 
 class VerificationScreen extends StatelessWidget {
   const VerificationScreen({super.key});
@@ -12,6 +12,7 @@ class VerificationScreen extends StatelessWidget {
         title: const Text('Verification'),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: Colors.green,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -24,6 +25,7 @@ class VerificationScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
+                color: Colors.green,
               ),
             ),
             const SizedBox(height: 10),
@@ -68,7 +70,7 @@ class VerificationScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (context) => HomeScreen()),
+                  MaterialPageRoute(builder: (context) => const MainAppScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(
