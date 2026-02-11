@@ -772,14 +772,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSpecialOffersBanner() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.green.shade500, Colors.green.shade700],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
             color: Colors.green.withOpacity(0.3),
