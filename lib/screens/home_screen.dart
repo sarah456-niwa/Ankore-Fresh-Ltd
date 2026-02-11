@@ -113,29 +113,20 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(height: 12),
           
-          // Products grid - Using fixed height container
-          Container(
-            height: _calculateGridHeight(), // Exact height calculation
-            child: _isLoading ? _buildShimmerGrid() : _buildProductsGrid(),
-          ),
+          // Products grid
+          _isLoading ? _buildShimmerGrid() : _buildProductsGrid(),
           
-          const SizedBox(height: 20),
+          // Extra space between grid and banner - INCREASED
+          const SizedBox(height: 32),
           
           // Special offers banner
           _buildSpecialOffersBanner(),
           
-          const SizedBox(height: 40),
+          // Extra bottom padding
+          const SizedBox(height: 20),
         ],
       ),
     );
-  }
-
-  double _calculateGridHeight() {
-    if (_isLoading) return 440; // 4 shimmer items
-    if (_products.isEmpty) return 220; // Empty state
-    final itemCount = _products.length > 6 ? 6 : _products.length;
-    final rows = (itemCount / 2).ceil(); // Calculate rows
-    return rows * 210; // Each row = 210px (200px card + 10px spacing)
   }
 
   Widget _buildWelcomeSection() {
@@ -402,13 +393,13 @@ class _HomeScreenState extends State<HomeScreen> {
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
-        mainAxisSpacing: 10, // Reduced slightly
-        childAspectRatio: 0.72, // Adjusted for perfect fit
+        mainAxisSpacing: 10,
+        childAspectRatio: 0.72,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) {
         return SizedBox(
-          height: 200, // Fixed exact height
+          height: 200,
           child: _buildProductCard(_products[index]),
         );
       },
@@ -417,7 +408,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildProductCard(Product product) {
     return Container(
-      height: 200, // Fixed exact height
+      height: 200,
       constraints: const BoxConstraints(
         maxHeight: 200,
         minHeight: 200,
@@ -433,12 +424,11 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min, // Important: prevents expansion
+            mainAxisSize: MainAxisSize.min,
             children: [
-              // Product image - Fixed height with ClipRect
               ClipRect(
                 child: Container(
-                  height: 85, // Fixed height
+                  height: 85,
                   width: double.infinity,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
@@ -488,7 +478,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               
-              // Product details - Using Expanded with constraints
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
@@ -500,7 +489,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Category badge - Fixed height
                       SizedBox(
                         height: 18,
                         child: Align(
@@ -530,9 +518,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       
-                      // Product name - Fixed height container
                       SizedBox(
-                        height: 34, // Fixed height
+                        height: 34,
                         child: Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
@@ -548,7 +535,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       
-                      // Unit - Fixed height
                       SizedBox(
                         height: 14,
                         child: Align(
@@ -565,7 +551,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       
-                      // Price, rating, and button - Fixed height container
                       SizedBox(
                         height: 28,
                         child: Row(
@@ -609,7 +594,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               ),
                             ),
                             const SizedBox(width: 4),
-                            // Add to cart button
                             Container(
                               width: 24,
                               height: 24,
@@ -772,14 +756,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSpecialOffersBanner() {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.green.shade500, Colors.green.shade700],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.green.withOpacity(0.3),
@@ -796,57 +780,72 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: const Text(
-                    'LIMITED TIME',
+                    'LIMITED TIME OFFER',
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: 1,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 const Text(
-                  'Special Offer!',
+                  '20% OFF',
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: 28,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Get 20% off on all organic products. Use code: ANKOLE20',
+                  'on all organic products',
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.9),
-                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Use code: ANKOLE20',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.white.withOpacity(0.8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: Colors.green.shade700,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(25),
-              ),
-              elevation: 2,
+          const SizedBox(width: 16),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: const Text(
-              'Shop Now',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
+            child: IconButton(
+              onPressed: () {},
+              icon: const Icon(
+                Icons.arrow_forward,
+                color: Colors.green,
+                size: 24,
+              ),
+              style: IconButton.styleFrom(
+                padding: const EdgeInsets.all(12),
               ),
             ),
           ),
