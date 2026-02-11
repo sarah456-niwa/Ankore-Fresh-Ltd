@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
 import '../models/category.dart';
+import 'main_app_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
   const ProductsScreen({super.key});

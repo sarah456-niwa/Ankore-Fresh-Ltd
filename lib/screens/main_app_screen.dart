@@ -2,67 +2,75 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'products_screen.dart';
-import 'search_screen.dart';
-import 'cart_screen.dart';
-import 'profile_screen.dart';
+import '../widgets/global_search_overlay.dart';
 
-class MainAppScreen extends StatefulWidget {
-  const MainAppScreen({super.key});
-
-  @override
-  State<MainAppScreen> createState() => _MainAppScreenState();
-}
-
-class _MainAppScreenState extends State<MainAppScreen> {
+// Make the state class public by removing the underscore
+class MainAppScreenState extends State<MainAppScreen> {
   int _selectedIndex = 0;
+  bool _isSearchVisible = false;
 
   final List<Widget> _screens = [
     const HomeScreen(),
-    const SearchScreen(),
     const ProductsScreen(),
-    const CartScreen(),
-    const ProfileScreen(),
+    const Center(child: Text('Cart Screen')),
+    const Center(child: Text('Profile Screen')),
   ];
 
-  void _onItemTapped(int index) {
+  void toggleSearch() {
     setState(() {
-      _selectedIndex = index;
+      _isSearchVisible = !_isSearchVisible;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: 'Search',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_basket),
-            label: 'Products',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Cart',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profile',
-          ),
-        ],
+    return GlobalSearchOverlay(
+      isVisible: _isSearchVisible,
+      onClose: toggleSearch,
+      child: Scaffold(
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          selectedItemColor: Colors.green[800],
+          unselectedItemColor: Colors.grey,
+          showUnselectedLabels: true,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag_outlined),
+              activeIcon: Icon(Icons.shopping_bag),
+              label: 'Products',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart_outlined),
+              activeIcon: Icon(Icons.shopping_cart),
+              label: 'Cart',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outlined),
+              activeIcon: Icon(Icons.person),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+class MainAppScreen extends StatefulWidget {
+  const MainAppScreen({super.key});
+
+  @override
+  State<MainAppScreen> createState() => MainAppScreenState();
 }

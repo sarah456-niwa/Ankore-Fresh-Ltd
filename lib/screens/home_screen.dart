@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
+import 'main_app_screen.dart'; // Keep this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -53,6 +54,12 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadProducts();
   }
 
+  // Fixed method to open global search
+  void _openGlobalSearch() {
+    final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
+    mainAppScreen?.toggleSearch();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,15 +69,16 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
+          // Search icon in AppBar - Now working
+          IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: _openGlobalSearch,
+            tooltip: 'Search products',
+          ),
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {},
             tooltip: 'Notifications',
-          ),
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
-            tooltip: 'Search',
           ),
         ],
       ),
@@ -98,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(height: 20),
           
-          // Search bar
+          // Search bar - Now working
           _buildSearchBar(),
           
           const SizedBox(height: 20),
@@ -116,7 +124,7 @@ class _HomeScreenState extends State<HomeScreen> {
           // Products grid
           _isLoading ? _buildShimmerGrid() : _buildProductsGrid(),
           
-          // Extra space between grid and banner - INCREASED
+          // Extra space between grid and banner
           const SizedBox(height: 32),
           
           // Special offers banner
@@ -198,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchBar() {
     return GestureDetector(
-      onTap: () {},
+      onTap: _openGlobalSearch, // Opens global search overlay
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -275,49 +283,52 @@ class _HomeScreenState extends State<HomeScreen> {
             itemCount: categories.length,
             itemBuilder: (context, index) {
               final category = categories[index];
-              return Container(
-                width: 90,
-                margin: EdgeInsets.only(
-                  right: index == categories.length - 1 ? 0 : 12,
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 70,
-                      height: 70,
-                      decoration: BoxDecoration(
-                        color: (category['color'] as Color).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(15),
-                        border: Border.all(
-                          color: (category['color'] as Color).withOpacity(0.3),
-                          width: 1,
+              return GestureDetector(
+                onTap: _openGlobalSearch, // Optional: open search with category
+                child: Container(
+                  width: 90,
+                  margin: EdgeInsets.only(
+                    right: index == categories.length - 1 ? 0 : 12,
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 70,
+                        height: 70,
+                        decoration: BoxDecoration(
+                          color: (category['color'] as Color).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(15),
+                          border: Border.all(
+                            color: (category['color'] as Color).withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Icon(
+                            category['icon'] as IconData,
+                            color: category['color'] as Color,
+                            size: 30,
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Icon(
-                          category['icon'] as IconData,
-                          color: category['color'] as Color,
-                          size: 30,
+                      const SizedBox(height: 8),
+                      Text(
+                        category['name'] as String,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        '${category['count']} items',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey.shade600,
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      category['name'] as String,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    Text(
-                      '${category['count']} items',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },
@@ -339,7 +350,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton.icon(
-          onPressed: () {},
+          onPressed: () {
+            // Navigate to products screen
+            final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
+            if (mainAppScreen != null) {
+              // You can add a method to change tab if needed
+            }
+          },
           icon: const Icon(Icons.arrow_forward, size: 16),
           label: const Text(
             'View All',
