@@ -1,24 +1,13 @@
-// main.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/main_app_screen.dart';
-import 'screens/splash_screen.dart';
+import 'screens/splash_screen.dart';  // Only need splash screen here
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Check if onboarding has been completed
-  final prefs = await SharedPreferences.getInstance();
-  final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
-  
-  runApp(MyApp(onboardingCompleted: onboardingCompleted));
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final bool onboardingCompleted;
-
-  const MyApp({super.key, required this.onboardingCompleted});
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -29,9 +18,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.green,
         fontFamily: 'Poppins',
       ),
-      home: onboardingCompleted 
-          ? const MainAppScreen() 
-          : const OnboardingScreen(),
+      home: const SplashScreen(),  // SplashScreen handles the rest
     );
   }
 }
