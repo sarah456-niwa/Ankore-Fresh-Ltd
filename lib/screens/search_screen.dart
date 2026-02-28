@@ -1,11 +1,12 @@
-// screens/search_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+  final String? initialSearch; // Add this parameter
+
+  const SearchScreen({super.key, this.initialSearch}); // Update constructor
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -37,7 +38,14 @@ class _SearchScreenState extends State<SearchScreen> {
   void initState() {
     super.initState();
     _loadRecentSearches();
-    _searchFocusNode.requestFocus();
+    
+    // If there's an initial search, set it and perform search
+    if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
+      _searchController.text = widget.initialSearch!;
+      _performSearch(widget.initialSearch!);
+    } else {
+      _searchFocusNode.requestFocus();
+    }
   }
 
   @override
@@ -216,7 +224,8 @@ class _SearchScreenState extends State<SearchScreen> {
                 Chip(
                   label: Text(search),
                   onDeleted: () => setState(() => _recentSearches.remove(search)),
-                )
+                  deleteIconColor: Colors.red,
+                ),
               ).toList(),
             ),
             const SizedBox(height: 30),
@@ -233,7 +242,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   _searchController.text = search;
                   _performSearch(search);
                 },
-              )
+                backgroundColor: Colors.green.shade50,
+                labelStyle: TextStyle(color: Colors.green.shade800),
+              ),
             ).toList(),
           ),
         ],
@@ -273,29 +284,86 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
+        final product = _searchResults[index];
         return Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
+                flex: 3,
                 child: Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.green.shade100,
+                    color: _getCategoryColor(product.category).withOpacity(0.1),
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   ),
                   child: Center(
-                    child: Icon(Icons.shopping_bag, size: 40, color: Colors.green[800]),
+                    child: Icon(
+                      _getCategoryIcon(product.category),
+                      size: 40,
+                      color: _getCategoryColor(product.category),
+                    ),
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(_searchResults[index].name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(_searchResults[index].formattedPrice, style: TextStyle(color: Colors.green[800])),
-                  ],
+              Expanded(
+                flex: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        product.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        product.unit,
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            product.formattedPrice,
+                            style: TextStyle(
+                              color: Colors.green[800],
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Colors.green[800],
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                              onPressed: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('${product.name} added to cart'),
+                                    backgroundColor: Colors.green,
+                                    duration: const Duration(seconds: 1),
+                                  ),
+                                );
+                              },
+                              padding: EdgeInsets.zero,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -303,5 +371,46 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       },
     );
+  }
+
+  // Helper methods for category colors and icons
+  Color _getCategoryColor(String category) {
+    switch (category.toLowerCase()) {
+      case 'fruits':
+        return Colors.orange.shade600;
+      case 'vegetables':
+        return Colors.green.shade600;
+      case 'organic':
+        return Colors.purple.shade600;
+      case 'fresh juice':
+      case 'juice':
+      case 'drinks':
+        return Colors.blue.shade600;
+      case 'dairy':
+      case 'milk':
+        return Colors.brown.shade600;
+      default:
+        return Colors.green.shade600;
+    }
+  }
+
+  IconData _getCategoryIcon(String category) {
+    switch (category.toLowerCase()) {
+      case 'fruits':
+        return Icons.apple;
+      case 'vegetables':
+        return Icons.eco;
+      case 'organic':
+        return Icons.spa;
+      case 'fresh juice':
+      case 'juice':
+      case 'drinks':
+        return Icons.local_drink;
+      case 'dairy':
+      case 'milk':
+        return Icons.local_cafe;
+      default:
+        return Icons.shopping_basket;
+    }
   }
 }

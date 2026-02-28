@@ -1,19 +1,53 @@
-// screens/splash_screen.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'onboarding_screen.dart';
+import 'main_app_screen.dart';
 
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    Future.delayed(const Duration(seconds: 3), () {
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _navigateToNextScreen();
+  }
+
+  Future<void> _navigateToNextScreen() async {
+    // Show splash for 2 seconds
+    await Future.delayed(const Duration(seconds: 2));
+
+    // Check if user has seen onboarding
+    final prefs = await SharedPreferences.getInstance();
+    
+    // FOR TESTING: Uncomment this line to force onboarding to show every time
+    await prefs.remove('onboarding_completed');
+    
+    final onboardingCompleted = prefs.getBool('onboarding_completed') ?? false;
+
+    if (!mounted) return;
+
+    if (onboardingCompleted) {
+      // Returning user - go to main app
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainAppScreen()),
+      );
+    } else {
+      // First time user - go to onboarding
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const OnboardingScreen()),
       );
-    });
+    }
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.green,
       body: Center(
@@ -41,6 +75,10 @@ class SplashScreen extends StatelessWidget {
                 color: Colors.white70,
                 fontSize: 16,
               ),
+            ),
+            const SizedBox(height: 40),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),
           ],
         ),

@@ -1,9 +1,10 @@
-// screens/home_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/product_service.dart';
 import '../models/product.dart';
-import 'main_app_screen.dart'; // Keep this import
+import 'main_app_screen.dart';
+import 'search_screen.dart';
+import 'products_screen.dart'; // Add this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -54,10 +55,252 @@ class _HomeScreenState extends State<HomeScreen> {
     await _loadProducts();
   }
 
-  // Fixed method to open global search
-  void _openGlobalSearch() {
+  void _openSearch() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SearchScreen()),
+    );
+  }
+
+  void _openProducts() {
+    // Navigate to products screen via MainAppScreen
     final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
-    mainAppScreen?.toggleSearch();
+    if (mainAppScreen != null) {
+      mainAppScreen.changeTab(1); // Products tab index
+    }
+  }
+
+  void _showMenuOptions() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'More Options',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.info, color: Colors.green),
+                  ),
+                  title: const Text('About Us'),
+                  subtitle: const Text('Learn more about Ankore Fresh'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showAboutUs();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.contact_phone, color: Colors.blue),
+                  ),
+                  title: const Text('Contact Us'),
+                  subtitle: const Text('Get in touch with our team'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showContactUs();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.location_on, color: Colors.orange),
+                  ),
+                  title: const Text('Our Location'),
+                  subtitle: const Text('Find our physical stores'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showLocation();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.privacy_tip, color: Colors.purple),
+                  ),
+                  title: const Text('Privacy Policy'),
+                  subtitle: const Text('Read our privacy policy'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showPrivacyPolicy();
+                  },
+                ),
+                ListTile(
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.description, color: Colors.red),
+                  ),
+                  title: const Text('Terms & Conditions'),
+                  subtitle: const Text('Read our terms of service'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _showTermsConditions();
+                  },
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAboutUs() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About Ankore Fresh'),
+        content: const Text(
+          'Ankore Fresh LTD is your trusted source for fresh produce delivered directly from local farms in Uganda. We connect farmers with consumers to bring you the freshest fruits, vegetables, and dairy products right to your doorstep.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showContactUs() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Contact Us'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('📍 Kampala, Uganda'),
+            SizedBox(height: 8),
+            Text('📞 +256 123 456 789'),
+            SizedBox(height: 8),
+            Text('📧 info@ankorefresh.com'),
+            SizedBox(height: 8),
+            Text('🌐 www.ankorefresh.com'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLocation() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Our Location'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('Main Office:'),
+            SizedBox(height: 4),
+            Text('Plot 123, Kampala Road'),
+            Text('Kampala City Centre'),
+            Text('Uganda'),
+            SizedBox(height: 16),
+            Text('Opening Hours:'),
+            SizedBox(height: 4),
+            Text('Monday - Friday: 8am - 6pm'),
+            Text('Saturday: 9am - 4pm'),
+            Text('Sunday: Closed'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPrivacyPolicy() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Privacy Policy'),
+        content: const Text(
+          'We value your privacy. Your personal information is protected and will never be shared with third parties without your consent. Read our full privacy policy on our website.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTermsConditions() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Terms & Conditions'),
+        content: const Text(
+          'By using Ankore Fresh, you agree to our terms of service. We strive to provide the freshest products but delivery times may vary. Refunds and returns are handled on a case-by-case basis.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -69,16 +312,92 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          // Search icon in AppBar - Now working
+          // Search icon
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: _openGlobalSearch,
+            onPressed: _openSearch,
             tooltip: 'Search products',
           ),
+          // Notifications icon
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {},
             tooltip: 'Notifications',
+          ),
+          // Three dots menu
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              switch (value) {
+                case 'about':
+                  _showAboutUs();
+                  break;
+                case 'contact':
+                  _showContactUs();
+                  break;
+                case 'location':
+                  _showLocation();
+                  break;
+                case 'privacy':
+                  _showPrivacyPolicy();
+                  break;
+                case 'terms':
+                  _showTermsConditions();
+                  break;
+              }
+            },
+            itemBuilder: (BuildContext context) => [
+              const PopupMenuItem(
+                value: 'about',
+                child: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('About Us'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'contact',
+                child: Row(
+                  children: [
+                    Icon(Icons.contact_phone, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Contact Us'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'location',
+                child: Row(
+                  children: [
+                    Icon(Icons.location_on, color: Colors.orange),
+                    SizedBox(width: 8),
+                    Text('Our Location'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(Icons.privacy_tip, color: Colors.purple),
+                    SizedBox(width: 8),
+                    Text('Privacy Policy'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'terms',
+                child: Row(
+                  children: [
+                    Icon(Icons.description, color: Colors.red),
+                    SizedBox(width: 8),
+                    Text('Terms & Conditions'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -106,7 +425,7 @@ class _HomeScreenState extends State<HomeScreen> {
           
           const SizedBox(height: 20),
           
-          // Search bar - Now working
+          // Search bar
           _buildSearchBar(),
           
           const SizedBox(height: 20),
@@ -124,14 +443,12 @@ class _HomeScreenState extends State<HomeScreen> {
           // Products grid
           _isLoading ? _buildShimmerGrid() : _buildProductsGrid(),
           
-          // Extra space between grid and banner
-          const SizedBox(height: 32),
-          
-          // Special offers banner
-          _buildSpecialOffersBanner(),
-          
           // Extra bottom padding
           const SizedBox(height: 20),
+          
+          // Special offers banner - Now inactive (commented out)
+          // We'll activate it later
+          // _buildSpecialOffersBanner(),
         ],
       ),
     );
@@ -206,7 +523,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildSearchBar() {
     return GestureDetector(
-      onTap: _openGlobalSearch, // Opens global search overlay
+      onTap: _openSearch,
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -284,7 +601,16 @@ class _HomeScreenState extends State<HomeScreen> {
             itemBuilder: (context, index) {
               final category = categories[index];
               return GestureDetector(
-                onTap: _openGlobalSearch, // Optional: open search with category
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => SearchScreen(
+                        initialSearch: category['name'] as String,
+                      ),
+                    ),
+                  );
+                },
                 child: Container(
                   width: 90,
                   margin: EdgeInsets.only(
@@ -350,13 +676,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton.icon(
-          onPressed: () {
-            // Navigate to products screen
-            final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
-            if (mainAppScreen != null) {
-              // You can add a method to change tab if needed
-            }
-          },
+          onPressed: _openProducts, // Now navigates to products screen
           icon: const Icon(Icons.arrow_forward, size: 16),
           label: const Text(
             'View All',
@@ -437,7 +757,16 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SearchScreen(
+                  initialSearch: product.name,
+                ),
+              ),
+            );
+          },
           borderRadius: BorderRadius.circular(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -771,105 +1100,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildSpecialOffersBanner() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade500, Colors.green.shade700],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.withOpacity(0.3),
-            blurRadius: 15,
-            spreadRadius: 2,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    'LIMITED TIME OFFER',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  '20% OFF',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'on all organic products',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.9),
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  'Use code: ANKOLE20',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.white.withOpacity(0.8),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: IconButton(
-              onPressed: () {},
-              icon: const Icon(
-                Icons.arrow_forward,
-                color: Colors.green,
-                size: 24,
-              ),
-              style: IconButton.styleFrom(
-                padding: const EdgeInsets.all(12),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Special offers banner - kept but commented out for future use
+  // Widget _buildSpecialOffersBanner() { ... }
 
   Widget _buildErrorView() {
     return Center(
