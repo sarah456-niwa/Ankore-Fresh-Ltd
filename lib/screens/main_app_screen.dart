@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'products_screen.dart';
 import 'cart_screen.dart';
+import 'profile_screen.dart';
 
 class MainAppScreen extends StatefulWidget {
   const MainAppScreen({super.key});
@@ -22,7 +23,7 @@ class MainAppScreenState extends State<MainAppScreen> {
       const HomeScreen(),
       const ProductsScreen(),
       const CartScreen(),
-      const Center(child: Text('Profile')), // Placeholder for profile screen
+      const ProfileScreen(), 
     ];
   }
 

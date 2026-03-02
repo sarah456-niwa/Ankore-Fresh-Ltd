@@ -307,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ankole Fresh LTD'),
+        title: const Text('Ankore Fresh LTD'),
         backgroundColor: Colors.green[800],
         foregroundColor: Colors.white,
         elevation: 2,
@@ -479,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Welcome to Ankole Fresh!',
+                  'Welcome to Ankore Fresh!',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

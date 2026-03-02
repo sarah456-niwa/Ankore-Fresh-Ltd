@@ -33,8 +33,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       'title': 'Best Prices',
       'description': 'Enjoy competitive prices and special discounts on organic and fresh produce',
       'icon': Icons.attach_money,
-      'color': Colors.purple,
-      'bgColor': const Color(0xFFF3E5F5),
+      'color': Colors.green,
+      'bgColor': const Color(0xFFE8F5E9),
     },
   ];
 
@@ -212,15 +212,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             borderRadius: BorderRadius.circular(30),
                             gradient: LinearGradient(
                               colors: [
-                                Colors.blue.shade700,
-                                Colors.blue.shade500,
+                                Colors.green.shade700,
+                                Colors.green.shade500,
                               ],
                               begin: Alignment.centerLeft,
                               end: Alignment.centerRight,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blue.withOpacity(0.3),
+                                color: Colors.green.withOpacity(0.3),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               ),
