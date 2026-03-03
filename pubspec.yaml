@@ -32,3 +32,8 @@ flutter:
   
   assets:
     - assets/images/
+    - assets/images/fruits/
+    - assets/images/vegetables/
+    - assets/images/juice/
+    - assets/images/organic/
+    - assets/icons/
