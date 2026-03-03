@@ -4,7 +4,7 @@ import '../services/product_service.dart';
 import '../models/product.dart';
 import 'main_app_screen.dart';
 import 'search_screen.dart';
-import 'products_screen.dart'; // Add this import
+import 'products_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -63,10 +63,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openProducts() {
-    // Navigate to products screen via MainAppScreen
     final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
     if (mainAppScreen != null) {
-      mainAppScreen.changeTab(1); // Products tab index
+      mainAppScreen.changeTab(1);
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ProductsScreen()),
+      );
     }
   }
 
@@ -312,19 +316,16 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          // Search icon
           IconButton(
             icon: const Icon(Icons.search),
             onPressed: _openSearch,
             tooltip: 'Search products',
           ),
-          // Notifications icon
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {},
             tooltip: 'Notifications',
           ),
-          // Three dots menu
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
@@ -420,35 +421,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Welcome section
           _buildWelcomeSection(),
-          
           const SizedBox(height: 20),
-          
-          // Search bar
           _buildSearchBar(),
-          
           const SizedBox(height: 20),
-          
-          // Categories section
           _buildCategoriesSection(),
-          
           const SizedBox(height: 24),
-          
-          // Featured products section
           _buildProductsHeader(),
-          
           const SizedBox(height: 12),
-          
-          // Products grid
           _isLoading ? _buildShimmerGrid() : _buildProductsGrid(),
-          
-          // Extra bottom padding
           const SizedBox(height: 20),
-          
-          // Special offers banner - Now inactive (commented out)
-          // We'll activate it later
-          // _buildSpecialOffersBanner(),
         ],
       ),
     );
@@ -562,12 +544,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildCategoriesSection() {
     final categories = [
-      {'name': 'All', 'icon': Icons.all_inclusive, 'color': Colors.green, 'count': 20},
+      {'name': 'All', 'icon': Icons.apps, 'color': Colors.green, 'count': 27},
       {'name': 'Fruits', 'icon': Icons.apple, 'color': Colors.orange, 'count': 8},
-      {'name': 'Vegetables', 'icon': Icons.eco, 'color': Colors.green, 'count': 12},
-      {'name': 'Fresh Juice', 'icon': Icons.local_drink, 'color': Colors.blue, 'count': 5},
-      {'name': 'Organic', 'icon': Icons.spa, 'color': Colors.purple, 'count': 15},
-      {'name': 'Dairy', 'icon': Icons.local_cafe, 'color': Colors.brown, 'count': 7},
+      {'name': 'Vegetables', 'icon': Icons.eco, 'color': Colors.green, 'count': 15},
+      {'name': 'Fresh Juice', 'icon': Icons.local_drink, 'color': Colors.blue, 'count': 4},
+      {'name': 'Organic', 'icon': Icons.spa, 'color': Colors.purple, 'count': 0},
     ];
 
     return Column(
@@ -583,13 +564,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              'See all',
-              style: TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -602,14 +576,26 @@ class _HomeScreenState extends State<HomeScreen> {
               final category = categories[index];
               return GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => SearchScreen(
-                        initialSearch: category['name'] as String,
+                  if (category['name'] == 'All') {
+                    final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
+                    if (mainAppScreen != null) {
+                      mainAppScreen.changeTab(1);
+                    } else {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ProductsScreen()),
+                      );
+                    }
+                  } else {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductsScreen(
+                          initialCategory: category['name'] as String,
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 },
                 child: Container(
                   width: 90,
@@ -676,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         TextButton.icon(
-          onPressed: _openProducts, // Now navigates to products screen
+          onPressed: _openProducts,
           icon: const Icon(Icons.arrow_forward, size: 16),
           label: const Text(
             'View All',
@@ -761,8 +747,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => SearchScreen(
-                  initialSearch: product.name,
+                builder: (context) => ProductsScreen(
+                  initialCategory: product.category,
                 ),
               ),
             );
@@ -807,14 +793,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               decoration: BoxDecoration(
                                 color: Colors.amber.shade600,
                                 borderRadius: BorderRadius.circular(2),
-                              ),
-                              child: const Text(
-                                'FEAT',
-                                style: TextStyle(
-                                  fontSize: 5,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
                               ),
                             ),
                           ),
@@ -1099,9 +1077,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
   }
-
-  // Special offers banner - kept but commented out for future use
-  // Widget _buildSpecialOffersBanner() { ... }
 
   Widget _buildErrorView() {
     return Center(

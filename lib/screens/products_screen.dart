@@ -6,7 +6,9 @@ import 'main_app_screen.dart';
 import 'cart_screen.dart';
 
 class ProductsScreen extends StatefulWidget {
-  const ProductsScreen({super.key});
+  final String? initialCategory;
+
+  const ProductsScreen({super.key, this.initialCategory});
 
   @override
   State<ProductsScreen> createState() => _ProductsScreenState();
@@ -27,6 +29,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
   void initState() {
     super.initState();
     _loadData();
+    
+    // Set initial category if provided
+    if (widget.initialCategory != null && widget.initialCategory != 'All') {
+      _selectedCategory = widget.initialCategory!;
+    }
   }
 
   Future<void> _loadData() async {
@@ -408,7 +415,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               selected: isSelected,
               backgroundColor: Colors.grey.shade100,
-              selectedColor: Colors.green[800],
+              selectedColor: _getCategoryColor(category.name),
               checkmarkColor: Colors.white,
               onSelected: (selected) {
                 setState(() {
@@ -420,6 +427,11 @@ class _ProductsScreenState extends State<ProductsScreen> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              avatar: isSelected ? null : Icon(
+                _getCategoryIcon(category.name),
+                size: 14,
+                color: _getCategoryColor(category.name),
+              ),
             ),
           );
         },
@@ -890,6 +902,7 @@ class _ProductsScreenState extends State<ProductsScreen> {
     );
   }
 
+  // Helper methods
   Color _getCategoryColor(String category) {
     switch (category.toLowerCase()) {
       case 'fruits':
