@@ -387,9 +387,18 @@ class _ProductsScreenState extends State<ProductsScreen> {
   }
 
   Widget _buildCategories() {
+    // Calculate accurate counts from loaded products
+    final fruitsCount = _products.where((p) => p.category == 'Fruits').length;
+    final vegetablesCount = _products.where((p) => p.category == 'Vegetables').length;
+    final juiceCount = _products.where((p) => p.category == 'Fresh Juice').length;
+    final organicCount = _products.where((p) => p.category == 'Organic').length;
+    
     final allCategories = [
       Category(id: 'all', name: 'All', productCount: _products.length),
-      ..._categories,
+      Category(id: '1', name: 'Fruits', productCount: fruitsCount),
+      Category(id: '2', name: 'Vegetables', productCount: vegetablesCount),
+      Category(id: '3', name: 'Fresh Juice', productCount: juiceCount),
+      Category(id: '4', name: 'Organic', productCount: organicCount),
     ];
 
     return Container(
@@ -405,13 +414,29 @@ class _ProductsScreenState extends State<ProductsScreen> {
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: FilterChip(
-              label: Text(
-                category.name,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : Colors.grey.shade700,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
+              label: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    category.name,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.grey.shade700,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  if (category.productCount > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        '(${category.productCount})',
+                        style: TextStyle(
+                          color: isSelected ? Colors.white70 : Colors.grey.shade500,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               selected: isSelected,
               backgroundColor: Colors.grey.shade100,
@@ -425,13 +450,13 @@ class _ProductsScreenState extends State<ProductsScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              avatar: isSelected ? null : Icon(
+              avatar: !isSelected && category.name != 'All' ? Icon(
                 _getCategoryIcon(category.name),
                 size: 14,
                 color: _getCategoryColor(category.name),
-              ),
+              ) : null,
             ),
           );
         },
@@ -526,9 +551,10 @@ class _ProductsScreenState extends State<ProductsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Product Image/Icon
+          // Product Image - UPDATED TO SHOW ACTUAL IMAGES
           Container(
             height: 90,
+            width: double.infinity,
             decoration: BoxDecoration(
               color: _getCategoryColor(product.category).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
@@ -536,39 +562,86 @@ class _ProductsScreenState extends State<ProductsScreen> {
                 topRight: Radius.circular(12),
               ),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _getCategoryIcon(product.category),
-                    size: 30,
-                    color: _getCategoryColor(product.category),
+            child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      topRight: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      product.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Fallback if image fails to load
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                _getCategoryIcon(product.category),
+                                size: 30,
+                                color: _getCategoryColor(product.category).withOpacity(0.8),
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 1,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getCategoryColor(product.category),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  product.category.length > 8
+                                      ? '${product.category.substring(0, 7)}...'
+                                      : product.category,
+                                  style: const TextStyle(
+                                    fontSize: 8,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _getCategoryIcon(product.category),
+                          size: 30,
+                          color: _getCategoryColor(product.category).withOpacity(0.8),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _getCategoryColor(product.category),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            product.category.length > 8
+                                ? '${product.category.substring(0, 7)}...'
+                                : product.category,
+                            style: const TextStyle(
+                              fontSize: 8,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 1,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _getCategoryColor(product.category),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      product.category.length > 8
-                          ? '${product.category.substring(0, 7)}...'
-                          : product.category,
-                      style: const TextStyle(
-                        fontSize: 8,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ),
           
           // Product Details

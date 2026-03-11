@@ -4,9 +4,9 @@ import '../services/product_service.dart';
 import '../models/product.dart';
 
 class SearchScreen extends StatefulWidget {
-  final String? initialSearch; // Add this parameter
+  final String? initialSearch;
 
-  const SearchScreen({super.key, this.initialSearch}); // Update constructor
+  const SearchScreen({super.key, this.initialSearch});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -39,7 +39,6 @@ class _SearchScreenState extends State<SearchScreen> {
     super.initState();
     _loadRecentSearches();
     
-    // If there's an initial search, set it and perform search
     if (widget.initialSearch != null && widget.initialSearch!.isNotEmpty) {
       _searchController.text = widget.initialSearch!;
       _performSearch(widget.initialSearch!);
@@ -293,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Product Image - UPDATED TO SHOW ACTUAL IMAGES
               Expanded(
                 flex: 3,
                 child: Container(
@@ -301,13 +301,31 @@ class _SearchScreenState extends State<SearchScreen> {
                     color: _getCategoryColor(product.category).withOpacity(0.1),
                     borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                   ),
-                  child: Center(
-                    child: Icon(
-                      _getCategoryIcon(product.category),
-                      size: 40,
-                      color: _getCategoryColor(product.category),
-                    ),
-                  ),
+                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                          child: Image.asset(
+                            product.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Fallback if image fails to load
+                              return Center(
+                                child: Icon(
+                                  _getCategoryIcon(product.category),
+                                  size: 40,
+                                  color: _getCategoryColor(product.category),
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      : Center(
+                          child: Icon(
+                            _getCategoryIcon(product.category),
+                            size: 40,
+                            color: _getCategoryColor(product.category),
+                          ),
+                        ),
                 ),
               ),
               Expanded(
@@ -349,6 +367,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             child: IconButton(
                               icon: const Icon(Icons.add, size: 16, color: Colors.white),
                               onPressed: () {
+                                // Add to cart functionality
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('${product.name} added to cart'),

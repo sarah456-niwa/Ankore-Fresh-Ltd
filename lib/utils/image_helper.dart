@@ -1,12 +1,13 @@
+// lib/utils/image_helper.dart
 class ImageHelper {
-//   // Category icons
-//   static const String categoryAll = 'assets/icons/category_all.png';
-//   static const String categoryFruits = 'assets/icons/category_fruits.png';
-//   static const String categoryVegetables = 'assets/icons/category_vegetables.png';
-//   static const String categoryJuice = 'assets/icons/category_juice.png';
-//   static const String categoryOrganic = 'assets/icons/category_organic.png';
+  // Category icons (you can add these later)
+  static const String categoryAll = 'assets/icons/category_all.png';
+  static const String categoryFruits = 'assets/icons/category_fruits.png';
+  static const String categoryVegetables = 'assets/icons/category_vegetables.png';
+  static const String categoryJuice = 'assets/icons/category_juice.png';
+  static const String categoryOrganic = 'assets/icons/category_organic.png';
   
-  // Product images
+  // Product images - Fruits
   static const String mangoes = 'assets/images/fruits/mangoes.jpg';
   static const String passionFruits = 'assets/images/fruits/passion.jpg';
   static const String pawpaws = 'assets/images/fruits/pawpaws.jpg';
@@ -16,6 +17,7 @@ class ImageHelper {
   static const String pineapples = 'assets/images/fruits/pineapples.jpg';
   static const String bananas = 'assets/images/fruits/bananas.jpg';
   
+  // Product images - Vegetables
   static const String greenPeppers = 'assets/images/vegetables/green_peppers.jpg';
   static const String tomatoes = 'assets/images/vegetables/tomatoes.jpg';
   static const String eggplants = 'assets/images/vegetables/eggplants.jpg';
@@ -32,6 +34,7 @@ class ImageHelper {
   static const String irishPotatoes = 'assets/images/vegetables/irish_potatoes.jpg';
   static const String sweetPotatoes = 'assets/images/vegetables/sweet_potatoes.jpg';
   
+  // Product images - Juice
   static const String pineappleJuice = 'assets/images/juice/pineapple_juice.jpg';
   static const String passionJuice = 'assets/images/juice/passion_juice.jpg';
   static const String mixedJuice = 'assets/images/juice/mixed_juice.jpg';
