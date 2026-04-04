@@ -1,6 +1,6 @@
 // lib/screens/order_success_screen.dart
 import 'package:flutter/material.dart';
-import '../main_app_screen.dart';
+import 'main_app_screen.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
   final String orderNumber;
