@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   smooth_page_indicator: ^1.1.0
-  # Essential packages
+  provider: ^6.1.1  
   cupertino_icons: ^1.0.6
   http: ^1.1.0
   cached_network_image: ^3.3.0

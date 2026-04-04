@@ -1,111 +1,108 @@
 // lib/services/auth_service.dart
-import 'package:dio/dio.dart';
 import 'api_service.dart';
-import '../models/user.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final ApiService _apiService = ApiService();
   
   // Register new user
-  Future<User> register({
+  Future<Map<String, dynamic>> register({
     required String name,
     required String email,
     required String password,
     required String phone,
+    String? userType,
+    String? storeName,
+    String? businessAddress,
   }) async {
     try {
-      final response = await _apiService.post('register', {
+      final response = await _apiService.post('auth/register/', {
         'name': name,
         'email': email,
-        'password': password,
         'phone': phone,
+        'password': password,
+        'user_type': userType ?? 'immediate',
+        'store_name': storeName,
+        'business_address': businessAddress,
       });
       
-      if (response['token'] != null) {
-        await _apiService.saveToken(response['token']);
+      if (response['access'] != null) {
+        await _apiService.saveToken(response['access']);
+        await _apiService.saveRefreshToken(response['refresh']);
+        await _apiService.saveUserData(response['user']);
       }
       
-      return User.fromJson(response['user']);
+      return response;
     } catch (e) {
-      throw Exception('Registration failed: $e');
+      throw Exception('Registration failed: ${e.toString()}');
     }
   }
   
   // Login user
-  Future<User> login({
+  Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
     try {
-      final response = await _apiService.post('login', {
+      final response = await _apiService.post('auth/login/', {
         'email': email,
         'password': password,
       });
       
-      if (response['token'] != null) {
-        await _apiService.saveToken(response['token']);
+      if (response['access'] != null) {
+        await _apiService.saveToken(response['access']);
+        await _apiService.saveRefreshToken(response['refresh']);
+        await _apiService.saveUserData(response['user']);
       }
       
-      return User.fromJson(response['user']);
+      return response;
     } catch (e) {
-      throw Exception('Login failed: $e');
+      throw Exception('Login failed: ${e.toString()}');
     }
   }
   
   // Logout user
   Future<void> logout() async {
     try {
-      await _apiService.post('logout', {});
+      final prefs = await SharedPreferences.getInstance();
+      final refreshToken = prefs.getString('refresh_token');
+      
+      if (refreshToken != null) {
+        await _apiService.post('auth/logout/', {'refresh': refreshToken});
+      }
       await _apiService.removeToken();
     } catch (e) {
-      // Even if API fails, remove token locally
       await _apiService.removeToken();
     }
   }
   
   // Get current user profile
-  Future<User> getProfile() async {
+  Future<Map<String, dynamic>> getProfile() async {
     try {
-      final response = await _apiService.get('profile');
-      return User.fromJson(response);
+      final response = await _apiService.get('auth/profile/');
+      return response;
     } catch (e) {
-      throw Exception('Failed to load profile: $e');
+      throw Exception('Failed to load profile: ${e.toString()}');
     }
   }
   
   // Update profile
-  Future<User> updateProfile(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response = await _apiService.put('profile', data);
-      return User.fromJson(response);
+      final response = await _apiService.put('auth/profile/', data);
+      await _apiService.saveUserData(response);
+      return response;
     } catch (e) {
-      throw Exception('Failed to update profile: $e');
+      throw Exception('Failed to update profile: ${e.toString()}');
     }
   }
   
   // Forgot password
   Future<void> forgotPassword(String email) async {
     try {
-      await _apiService.post('password/forgot', {'email': email});
+      await _apiService.post('auth/password/forgot/', {'email': email});
     } catch (e) {
-      throw Exception('Failed to send reset email: $e');
-    }
-  }
-  
-  // Reset password
-  Future<void> resetPassword({
-    required String token,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      await _apiService.post('password/reset', {
-        'token': token,
-        'email': email,
-        'password': password,
-      });
-    } catch (e) {
-      throw Exception('Failed to reset password: $e');
+      throw Exception('Failed to send reset email: ${e.toString()}');
     }
   }
 }

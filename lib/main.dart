@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'screens/splash_screen.dart';  // Only need splash screen here
+import 'package:provider/provider.dart';
+import 'providers/cart_provider.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -11,14 +13,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Ankore Fresh LTD',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        primarySwatch: Colors.green,
-        fontFamily: 'Poppins',
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+      ],
+      child: MaterialApp(
+        title: 'Ankore Fresh LTD',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          primarySwatch: Colors.green,
+          fontFamily: 'Poppins',
+        ),
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),  // SplashScreen handles the rest
     );
   }
 }

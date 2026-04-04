@@ -51,6 +51,8 @@ class AuthScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 50),
+              
+              // Sign In Button (unchanged)
               ElevatedButton(
                 onPressed: () {
                   Navigator.push(
@@ -72,12 +74,12 @@ class AuthScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
+              
+              // Create Account Button (unchanged UI, but now with role parameter)
               OutlinedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const RegistrationScreen()),
-                  );
+                  // Show role selection dialog before navigating to registration
+                  _showRoleSelectionDialog(context);
                 },
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 55),
@@ -98,6 +100,59 @@ class AuthScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  // Add this method to show role selection dialog
+  void _showRoleSelectionDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Choose Account Type'),
+          content: const Text(
+            'Are you signing up as an Immediate Buyer or Bulk Buyer/Seller?',
+          ),
+          actions: [
+            // Immediate Buyer option
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrationScreen(
+                      userRole: 'immediate', // Pass role as parameter
+                    ),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.green,
+              ),
+              child: const Text('Immediate Buyer'),
+            ),
+            // Bulk Buyer option
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RegistrationScreen(
+                      userRole: 'bulk', // Pass role as parameter
+                    ),
+                  ),
+                );
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.orange,
+              ),
+              child: const Text('Bulk Buyer/Seller'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

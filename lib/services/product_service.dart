@@ -1,501 +1,107 @@
+// lib/services/product_service.dart
+import 'api_service.dart';
 import '../models/product.dart';
 import '../models/category.dart';
-import '../utils/image_helper.dart';
 
 class ProductService {
-  
-  // Get featured products
-  Future<List<Product>> getFeaturedProducts() async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    return [
-      Product(
-        id: '1',
-        name: 'Fresh Mangoes',
-        description: 'Sweet and juicy local mangoes from Uganda',
-        price: 3000,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.mangoes,
-        rating: 4.8,
-        stock: 50,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '2',
-        name: 'Passion Fruits',
-        description: 'Fresh passion fruits, rich in flavor',
-        price: 5000,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.passionFruits,
-        rating: 4.7,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '10',
-        name: 'Fresh Tomatoes',
-        description: 'Juicy ripe tomatoes',
-        price: 2000,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.tomatoes,
-        rating: 4.6,
-        stock: 80,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '15',
-        name: 'Sukuma Wiki (Kale)',
-        description: 'Fresh sukuma wiki, local greens',
-        price: 800,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.sukumaWiki,
-        rating: 4.4,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '24',
-        name: 'Pineapple Juice',
-        description: 'Freshly squeezed pineapple juice',
-        price: 3000,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.pineappleJuice,
-        rating: 4.8,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '25',
-        name: 'Passion Fruit Juice',
-        description: 'Sweet and tangy passion fruit juice',
-        price: 3500,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.passionJuice,
-        rating: 4.9,
-        stock: 35,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-    ];
-  }
+  final ApiService _apiService = ApiService();
   
   // Get all products
   Future<List<Product>> getProducts() async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    return [
-      // FRUITS CATEGORY - 8 products
-      Product(
-        id: '1',
-        name: 'Fresh Mangoes',
-        description: 'Sweet and juicy local mangoes from Uganda',
-        price: 3000,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.mangoes,
-        rating: 4.8,
-        stock: 50,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '2',
-        name: 'Passion Fruits',
-        description: 'Fresh passion fruits, rich in flavor',
-        price: 5000,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.passionFruits,
-        rating: 4.7,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '3',
-        name: 'Pawpaws (Papaya)',
-        description: 'Ripe and sweet pawpaws',
-        price: 2500,
-        unit: 'each',
-        category: 'Fruits',
-        imageUrl: ImageHelper.pawpaws,
-        rating: 4.5,
-        stock: 30,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '4',
-        name: 'Fresh Oranges',
-        description: 'Juicy sweet oranges from Uganda',
-        price: 3500,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.oranges,
-        rating: 4.6,
-        stock: 60,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '5',
-        name: 'Hass Avocados',
-        description: 'Creamy Hass avocados',
-        price: 4000,
-        unit: 'per kg',
-        category: 'Fruits',
-        imageUrl: ImageHelper.avocados,
-        rating: 4.9,
-        stock: 45,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '6',
-        name: 'Watermelons',
-        description: 'Sweet and refreshing watermelons',
-        price: 5000,
-        unit: 'each',
-        category: 'Fruits',
-        imageUrl: ImageHelper.watermelons,
-        rating: 4.7,
-        stock: 25,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '7',
-        name: 'Sweet Pineapples',
-        description: 'Extra sweet pineapples from the farm',
-        price: 4500,
-        unit: 'each',
-        category: 'Fruits',
-        imageUrl: ImageHelper.pineapples,
-        rating: 4.8,
-        stock: 35,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '8',
-        name: 'Ripe Bananas',
-        description: 'Fresh ripe bananas',
-        price: 2000,
-        unit: 'per bunch',
-        category: 'Fruits',
-        imageUrl: ImageHelper.bananas,
-        rating: 4.5,
-        stock: 70,
-        isOrganic: false,
-        isFeatured: false,
-      ),
+    try {
+      print('🔍 getProducts() called - Fetching from API...');
+      final response = await _apiService.get('products/');
+      print('✅ API Response received');
+      print('Response type: ${response.runtimeType}');
       
-      // VEGETABLES CATEGORY - 15 products
-      Product(
-        id: '9',
-        name: 'Green Peppers',
-        description: 'Fresh green peppers',
-        price: 1500,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.greenPeppers,
-        rating: 4.3,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '10',
-        name: 'Fresh Tomatoes',
-        description: 'Juicy ripe tomatoes',
-        price: 2000,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.tomatoes,
-        rating: 4.6,
-        stock: 80,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '11',
-        name: 'Eggplants',
-        description: 'Fresh eggplants (bitter tomatoes)',
-        price: 1800,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.eggplants,
-        rating: 4.2,
-        stock: 35,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '12',
-        name: 'Spinach',
-        description: 'Fresh green spinach',
-        price: 1000,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.spinach,
-        rating: 4.4,
-        stock: 30,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '13',
-        name: 'Cabbage',
-        description: 'Fresh cabbage heads',
-        price: 2500,
-        unit: 'each',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.cabbage,
-        rating: 4.3,
-        stock: 45,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '14',
-        name: 'Carrots',
-        description: 'Fresh crunchy carrots',
-        price: 2000,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.carrots,
-        rating: 4.5,
-        stock: 50,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '15',
-        name: 'Sukuma Wiki (Kale)',
-        description: 'Fresh sukuma wiki, local greens',
-        price: 800,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.sukumaWiki,
-        rating: 4.4,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '16',
-        name: 'Dodo (Amaranth)',
-        description: 'Fresh dodo, traditional greens',
-        price: 800,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.dodo,
-        rating: 4.5,
-        stock: 35,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '17',
-        name: 'Nakati (Solanum aethiopicum)',
-        description: 'Traditional Ugandan vegetable',
-        price: 1200,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.nakati,
-        rating: 4.6,
-        stock: 30,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '18',
-        name: 'Jobyo (Cowpeas leaves)',
-        description: 'Fresh cowpea leaves',
-        price: 1000,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.jobyo,
-        rating: 4.3,
-        stock: 25,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '19',
-        name: 'Cassava Leaves',
-        description: 'Fresh cassava leaves for cooking',
-        price: 1500,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.cassavaLeaves,
-        rating: 4.4,
-        stock: 30,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '20',
-        name: 'Pumpkin Leaves',
-        description: 'Fresh pumpkin leaves',
-        price: 1000,
-        unit: 'per bunch',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.pumpkinLeaves,
-        rating: 4.2,
-        stock: 25,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '21',
-        name: 'Red Onions',
-        description: 'Fresh red onions',
-        price: 2500,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.onions,
-        rating: 4.5,
-        stock: 60,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '22',
-        name: 'Irish Potatoes',
-        description: 'Fresh Irish potatoes',
-        price: 2000,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.irishPotatoes,
-        rating: 4.4,
-        stock: 80,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '23',
-        name: 'Sweet Potatoes',
-        description: 'Local sweet potatoes',
-        price: 1500,
-        unit: 'per kg',
-        category: 'Vegetables',
-        imageUrl: ImageHelper.sweetPotatoes,
-        rating: 4.6,
-        stock: 55,
-        isOrganic: false,
-        isFeatured: false,
-      ),
+      if (response is List) {
+        print('📦 Response is List with ${response.length} items');
+        return (response as List)
+            .map((json) => Product.fromJson(json))
+            .toList();
+      }
       
-      // FRESH JUICE CATEGORY - 4 products
-      Product(
-        id: '24',
-        name: 'Pineapple Juice',
-        description: 'Freshly squeezed pineapple juice',
-        price: 3000,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.pineappleJuice,
-        rating: 4.8,
-        stock: 40,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '25',
-        name: 'Passion Fruit Juice',
-        description: 'Sweet and tangy passion fruit juice',
-        price: 3500,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.passionJuice,
-        rating: 4.9,
-        stock: 35,
-        isOrganic: false,
-        isFeatured: true,
-      ),
-      Product(
-        id: '26',
-        name: 'Mixed Fruit Juice',
-        description: 'Blend of fresh local fruits',
-        price: 3000,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.mixedJuice,
-        rating: 4.7,
-        stock: 30,
-        isOrganic: false,
-        isFeatured: false,
-      ),
-      Product(
-        id: '27',
-        name: 'Strawberry Juice',
-        description: 'Fresh strawberry juice',
-        price: 4000,
-        unit: 'per bottle (500ml)',
-        category: 'Fresh Juice',
-        imageUrl: ImageHelper.strawberryJuice,
-        rating: 4.8,
-        stock: 25,
-        isOrganic: false,
-        isFeatured: false,
-      ),
+      if (response['results'] is List) {
+        final results = response['results'] as List;
+        print('📦 Response has results with ${results.length} items');
+        return results
+            .map((json) => Product.fromJson(json))
+            .toList();
+      }
       
-      // ORGANIC CATEGORY - EMPTY (0 products)
-      // No products in Organic category yet - to be added later
-    ];
+      print('⚠️ No products found in response');
+      return [];
+    } catch (e) {
+      print('❌ Error loading products: $e');
+      return [];
+    }
+  }
+  
+  // Get featured products
+  Future<List<Product>> getFeaturedProducts() async {
+    try {
+      print('🔍 getFeaturedProducts() called...');
+      final response = await _apiService.get('products/?is_featured=true');
+      print('✅ Featured products response received');
+      
+      if (response['results'] is List) {
+        final results = response['results'] as List;
+        print('📦 Featured products: ${results.length} items');
+        return results
+            .map((json) => Product.fromJson(json))
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('❌ Error loading featured products: $e');
+      return [];
+    }
   }
   
   // Get product by ID
   Future<Product> getProductById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    final products = await getProducts();
-    return products.firstWhere(
-      (product) => product.id == id,
-      orElse: () => products.first,
-    );
+    try {
+      final response = await _apiService.get('products/$id/');
+      return Product.fromJson(response);
+    } catch (e) {
+      throw Exception('Failed to load product: $e');
+    }
   }
   
-  // Get categories with accurate counts
+  // Get categories
   Future<List<Category>> getCategories() async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    final products = await getProducts();
-    
-    // Calculate accurate counts
-    final fruitsCount = products.where((p) => p.category == 'Fruits').length;
-    final vegetablesCount = products.where((p) => p.category == 'Vegetables').length;
-    final juiceCount = products.where((p) => p.category == 'Fresh Juice').length;
-    final organicCount = products.where((p) => p.category == 'Organic').length;
-    
-    return [
-      Category(id: '1', name: 'Fruits', productCount: fruitsCount),
-      Category(id: '2', name: 'Vegetables', productCount: vegetablesCount),
-      Category(id: '3', name: 'Fresh Juice', productCount: juiceCount),
-      Category(id: '4', name: 'Organic', productCount: organicCount),
-    ];
+    try {
+      final response = await _apiService.get('products/categories/');
+      
+      if (response is List) {
+        return (response as List)
+            .map((json) => Category.fromJson(json))
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('Error loading categories: $e');
+      return [];
+    }
   }
   
   // Search products
   Future<List<Product>> searchProducts(String query) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    
-    final allProducts = await getProducts();
-    return allProducts.where((product) {
-      return product.name.toLowerCase().contains(query.toLowerCase()) ||
-             product.category.toLowerCase().contains(query.toLowerCase());
-    }).toList();
+    try {
+      final response = await _apiService.get('products/?search=$query');
+      
+      if (response['results'] is List) {
+        return (response['results'] as List)
+            .map((json) => Product.fromJson(json))
+            .toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('Error searching products: $e');
+      return [];
+    }
   }
 }

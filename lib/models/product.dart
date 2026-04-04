@@ -1,4 +1,4 @@
-// Add this import at the top of the file
+// lib/models/product.dart
 import 'package:flutter/material.dart';
 
 class Product {
@@ -29,16 +29,42 @@ class Product {
   });
   
   factory Product.fromJson(Map<String, dynamic> json) {
+    // Helper to parse price from string or number
+    double parsePrice(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+    
+    // Helper to parse rating from string or number
+    double parseRating(dynamic value) {
+      if (value == null) return 0.0;
+      if (value is double) return value;
+      if (value is int) return value.toDouble();
+      if (value is String) return double.tryParse(value) ?? 0.0;
+      return 0.0;
+    }
+    
+    // Helper to parse stock from string or number
+    int parseStock(dynamic value) {
+      if (value == null) return 0;
+      if (value is int) return value;
+      if (value is String) return int.tryParse(value) ?? 0;
+      return 0;
+    }
+    
     return Product(
       id: json['id']?.toString() ?? '',
       name: json['name'] ?? '',
       description: json['description'] ?? '',
-      price: (json['price'] as num?)?.toDouble() ?? 0.0,
+      price: parsePrice(json['price']),
       unit: json['unit'] ?? '',
-      category: json['category'] ?? '',
-      imageUrl: json['image_url'] ?? json['imageUrl'],
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-      stock: (json['stock'] as num?)?.toInt() ?? 0,
+      category: json['category_name'] ?? json['category'] ?? '',
+      imageUrl: json['image'] ?? json['image_url'] ?? json['imageUrl'],
+      rating: parseRating(json['rating']),
+      stock: parseStock(json['stock']),
       isOrganic: json['is_organic'] ?? false,
       isFeatured: json['is_featured'] ?? false,
     );

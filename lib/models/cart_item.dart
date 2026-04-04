@@ -1,32 +1,36 @@
+// lib/models/cart_item.dart
 import 'product.dart';
 
 class CartItem {
   final String id;
   final Product product;
   int quantity;
+  final double priceAtAdd;
 
   CartItem({
     required this.id,
     required this.product,
-    this.quantity = 1,
+    required this.quantity,
+    required this.priceAtAdd,
   });
 
-  double get totalPrice => product.price * quantity;
+  double get totalPrice => priceAtAdd * quantity;
 
-  Map<String, dynamic> toMap() {
+  Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'productId': product.id,
+      'product_id': product.id,
       'quantity': quantity,
-      'product': product.toJson(),
+      'price_at_add': priceAtAdd,
     };
   }
 
-  factory CartItem.fromMap(Map<String, dynamic> map, Product product) {
+  factory CartItem.fromJson(Map<String, dynamic> json) {
     return CartItem(
-      id: map['id'],
-      product: product,
-      quantity: map['quantity'],
+      id: json['id']?.toString() ?? '',
+      product: Product.fromJson(json['product'] ?? {}),
+      quantity: json['quantity'] ?? 1,
+      priceAtAdd: (json['price_at_add'] ?? 0).toDouble(),
     );
   }
 }
