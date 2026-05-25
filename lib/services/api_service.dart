@@ -1,45 +1,128 @@
 // lib/services/api_service.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-
-  // CHANGE THIS TO YOUR COMPUTER'S IP ADDRESS
-  // Run 'ipconfig' in PowerShell to find your IPv4 Address
-  // Example: 192.168.1.100
-
-  static const String baseUrl = 'http://172.31.4.30:8000/api';
+  static String _baseUrl = '';
+  static bool _isInitialized = false;
   
-  // Alternative configurations (comment/uncomment as needed):
-  // For Android Emulator:
-  // static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // List of possible IPs to try (you can add more)
+  static const List<String> possibleIps = [
+    '10.76.28.33',
+    '192.168.1.127',
+    '172.31.247.99',
+    '172.31.0.112',
+    '192.168.1.11',
+  ];
   
-  // For iOS Simulator:
-  // static const String baseUrl = 'http://localhost:8000/api';
+  static const int apiPort = 8000;
+  static const String apiPath = 'api';
   
-  // Get headers with auth token
+  // Cookie jar to maintain session
+  static Map<String, String> _cookies = {};
+  
+  // Get base URL - Simplified for Chrome/Windows testing
+  static Future<String> get baseUrl async {
+    // For Chrome/Windows testing on same PC
+    // This works when Django is running on localhost:8000
+    return 'http://localhost:8000/api';
+  }
+  
+  static Future<bool> _testConnection(String url) async {
+    try {
+      print('Testing connection to: $url');
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+      ).timeout(const Duration(seconds: 3));
+      
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Connection failed to $url: $e');
+      return false;
+    }
+  }
+  
+  static Future<String?> _getComputerName() async {
+    // For Windows
+    try {
+      final result = await Process.run('hostname', []);
+      if (result.exitCode == 0) {
+        String hostname = result.stdout.toString().trim();
+        return hostname;
+      }
+    } catch (e) {
+      print('Could not get computer name: $e');
+    }
+    return null;
+  }
+  
+  // Manual URL setter (for settings screen)
+  static Future<void> setBaseUrl(String newUrl) async {
+    _baseUrl = newUrl;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('backend_url', newUrl);
+    print('✅ Manually set backend URL: $newUrl');
+  }
+  
+  // Get current base URL (use this in your API calls)
+  static Future<String> getCurrentBaseUrl() async {
+    return await baseUrl;
+  }
+  
+  // Extract cookies from response
+  void _extractCookies(http.Response response) {
+    final cookieHeader = response.headers['set-cookie'];
+    if (cookieHeader != null) {
+      // Parse the cookie (simplified - just store the sessionid)
+      final sessionMatch = RegExp(r'sessionid=([^;]+)').firstMatch(cookieHeader);
+      if (sessionMatch != null) {
+        _cookies['sessionid'] = sessionMatch.group(1)!;
+        print('🍪 Session cookie extracted');
+      }
+    }
+  }
+  
+  // Get headers with auth token and cookies
   Future<Map<String, String>> getHeaders() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
     
-    return {
+    final headers = {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
-      if (token != null) 'Authorization': 'Bearer $token',
     };
+    
+    // Add token if available
+    if (token != null) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    
+    // Add cookies if available
+    if (_cookies.isNotEmpty) {
+      final cookieString = _cookies.entries.map((e) => '${e.key}=${e.value}').join('; ');
+      headers['Cookie'] = cookieString;
+    }
+    
+    return headers;
   }
   
   // GET request
   Future<dynamic> get(String endpoint) async {
     try {
-      final url = Uri.parse('$baseUrl/$endpoint');
-      print('📡 GET Request: $url');  // Debug print
+      final base = await baseUrl;
+      final url = Uri.parse('$base/$endpoint');
+      print('📡 GET Request: $url');
       
       final response = await http.get(
         url,
         headers: await getHeaders(),
-      );
+      ).timeout(const Duration(seconds: 10));
+      
+      // Extract cookies for session persistence
+      _extractCookies(response);
       
       print('📡 Response Status: ${response.statusCode}');
       return _handleResponse(response);
@@ -52,7 +135,8 @@ class ApiService {
   // POST request
   Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
     try {
-      final url = Uri.parse('$baseUrl/$endpoint');
+      final base = await baseUrl;
+      final url = Uri.parse('$base/$endpoint');
       print('📡 POST Request: $url');
       print('📡 Body: $data');
       
@@ -60,7 +144,10 @@ class ApiService {
         url,
         headers: await getHeaders(),
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 10));
+      
+      // Extract cookies for session persistence
+      _extractCookies(response);
       
       print('📡 Response Status: ${response.statusCode}');
       return _handleResponse(response);
@@ -73,14 +160,18 @@ class ApiService {
   // PUT request
   Future<dynamic> put(String endpoint, Map<String, dynamic> data) async {
     try {
-      final url = Uri.parse('$baseUrl/$endpoint');
+      final base = await baseUrl;
+      final url = Uri.parse('$base/$endpoint');
       print('📡 PUT Request: $url');
       
       final response = await http.put(
         url,
         headers: await getHeaders(),
         body: json.encode(data),
-      );
+      ).timeout(const Duration(seconds: 10));
+      
+      // Extract cookies for session persistence
+      _extractCookies(response);
       
       print('📡 Response Status: ${response.statusCode}');
       return _handleResponse(response);
@@ -93,13 +184,17 @@ class ApiService {
   // DELETE request
   Future<dynamic> delete(String endpoint) async {
     try {
-      final url = Uri.parse('$baseUrl/$endpoint');
+      final base = await baseUrl;
+      final url = Uri.parse('$base/$endpoint');
       print('📡 DELETE Request: $url');
       
       final response = await http.delete(
         url,
         headers: await getHeaders(),
-      );
+      ).timeout(const Duration(seconds: 10));
+      
+      // Extract cookies for session persistence
+      _extractCookies(response);
       
       print('📡 Response Status: ${response.statusCode}');
       return _handleResponse(response);
@@ -132,6 +227,13 @@ class ApiService {
       default:
         throw Exception('Error: ${response.statusCode}');
     }
+  }
+  
+  // Clear session (logout)
+  Future<void> clearSession() async {
+    _cookies.clear();
+    await removeToken();
+    print('🍪 Session cleared');
   }
   
   // Token management
@@ -180,5 +282,65 @@ class ApiService {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool('is_logged_in') ?? false;
+  }
+  
+  // Optional: Add a method to refresh the backend discovery
+  static Future<void> refreshBackendDiscovery() async {
+    _baseUrl = '';
+    _isInitialized = false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('backend_url');
+    print('🔄 Backend discovery reset');
+  }
+  
+  // Login method using session authentication
+  Future<Map<String, dynamic>> sessionLogin(String email, String password) async {
+    try {
+      final base = await baseUrl;
+      final url = Uri.parse('$base/auth/mobile-login/');
+      print('📡 Login Request: $url');
+      
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'email': email,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 10));
+      
+      // Extract session cookie
+      _extractCookies(response);
+      
+      final data = json.decode(response.body);
+      
+      if (response.statusCode == 200) {
+        // Save user data
+        await saveUserData({
+          'name': data['user']['full_name'],
+          'email': data['user']['email'],
+          'user_type': 'immediate',
+        });
+        
+        // Save JWT tokens if provided
+        if (data['access'] != null) {
+          await saveToken(data['access']);
+        }
+        if (data['refresh'] != null) {
+          await saveRefreshToken(data['refresh']);
+        }
+        
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true);
+        
+        print('✅ Session login successful');
+        return {'success': true, 'message': 'Login successful', 'user': data['user']};
+      } else {
+        return {'success': false, 'message': data.get('message', 'Login failed')};
+      }
+    } catch (e) {
+      print('❌ Login error: $e');
+      return {'success': false, 'message': e.toString()};
+    }
   }
 }

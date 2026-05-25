@@ -1,7 +1,10 @@
 // lib/screens/checkout_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/cart_provider.dart';
+import '../services/order_service.dart';
+import '../models/order.dart';
 import 'order_success_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -18,6 +21,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _instructionsController = TextEditingController();
   String _selectedPaymentMethod = 'cash';
   bool _isLoading = false;
+  final OrderService _orderService = OrderService();
 
   final List<Map<String, dynamic>> _paymentMethods = [
     {'value': 'cash', 'label': 'Cash on Delivery', 'icon': Icons.money},
@@ -41,29 +45,145 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       _isLoading = true;
     });
     
-    await Future.delayed(const Duration(seconds: 1));
-    
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final orderNumber = 'ANK-${DateTime.now().millisecondsSinceEpoch}';
-    final total = cartProvider.totalAmount + 5000;
     
-    cartProvider.clearCart();
+    // DEBUG: Print cart items
+    print('🛒 Cart has ${cartProvider.items.length} items');
+    for (var item in cartProvider.items) {
+      print('   - ${item.product.name} (ID: ${item.product.id}) x${item.quantity}');
+    }
     
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OrderSuccessScreen(
-            orderNumber: orderNumber,
-            total: total,
-          ),
+    // Check if cart is empty
+    if (cartProvider.items.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Your cart is empty. Please add items first.'),
+          backgroundColor: Colors.red,
         ),
       );
+      setState(() {
+        _isLoading = false;
+      });
+      return;
     }
+    
+    // Get user info from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final userName = prefs.getString('user_name') ?? 'Customer';
+    final userEmail = prefs.getString('user_email') ?? '';
+    final userPhone = prefs.getString('user_phone') ?? '';
+    
+    // Calculate fees
+    final deliveryFee = 5000.0;
+    final serviceFee = cartProvider.totalAmount * 0.02;
+    final tax = cartProvider.totalAmount * 0.05;
+    final grandTotal = cartProvider.totalAmount + deliveryFee + serviceFee + tax;
+    
+    // Prepare order items
+    final List<Map<String, dynamic>> items = [];
+    for (var cartItem in cartProvider.items) {
+      items.add({
+        'product_id': cartItem.product.id,
+        'product': cartItem.product.id,
+        'product_name': cartItem.product.name,
+        'quantity': cartItem.quantity,
+        'price': cartItem.product.price,
+        'subtotal': cartItem.totalPrice,
+      });
+    }
+    
+    print('📦 Items being sent: $items');
+    
+    // Prepare order data for backend
+    final orderData = {
+      'customer_name': userName,
+      'customer_email': userEmail,
+      'customer_phone': userPhone,
+      'delivery_address': _addressController.text,
+      'delivery_phone': _phoneController.text,
+      'delivery_instructions': _instructionsController.text,
+      'payment_method': _selectedPaymentMethod,
+      'subtotal': cartProvider.totalAmount,
+      'delivery_fee': deliveryFee,
+      'service_fee': serviceFee,
+      'tax': tax,
+      'total': grandTotal,
+      'notes': _instructionsController.text,
+      'items': items,
+    };
+    
+    print('📦 Full order data: $orderData');
+    
+    // Send order to backend
+    final result = await _orderService.placeOrder(orderData);
     
     setState(() {
       _isLoading = false;
     });
+    
+    if (result['success']) {
+      // Clear cart
+      cartProvider.clearCart();
+      
+      // Create a local order object for tracking (no API call needed)
+      final localOrder = Order(
+        id: result['order_id'] ?? 0,
+        orderNumber: result['order_number'] ?? 'ANK-${DateTime.now().millisecondsSinceEpoch}',
+        status: 'pending',
+        statusDisplay: 'Pending',
+        paymentStatus: 'pending',
+        paymentStatusDisplay: 'Pending',
+        paymentMethod: _selectedPaymentMethod,
+        paymentMethodDisplay: _selectedPaymentMethod == 'cash' ? 'Cash on Delivery' : 'Mobile Money',
+        deliveryAddress: _addressController.text,
+        deliveryPhone: _phoneController.text,
+        subtotal: cartProvider.totalAmount,
+        deliveryFee: deliveryFee,
+        serviceFee: serviceFee,
+        discount: 0,
+        tax: tax,
+        total: grandTotal,
+        items: cartProvider.items.map((cartItem) => OrderItem(
+          id: 0,
+          productName: cartItem.product.name,
+          productId: cartItem.product.id,
+          price: cartItem.product.price,
+          quantity: cartItem.quantity,
+          subtotal: cartItem.totalPrice,
+          productImage: null,
+        )).toList(),
+        createdAt: DateTime.now(),
+        estimatedDelivery: DateTime.now().add(const Duration(days: 3)),
+        trackingNumber: null,
+        canCancel: true,
+        deliveryInstructions: _instructionsController.text,
+        currentLocation: null,
+        deliveryAgent: null,
+        trackingHistory: [],
+      );
+      
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => OrderSuccessScreen(
+              order: localOrder,  // Pass the order object directly
+            ),
+          ),
+        );
+      }
+    } else {
+      // Show error
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to place order. Please try again.'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -89,6 +209,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
                 child: const Text('Go Back'),
               ),
             ],
@@ -161,8 +285,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Delivery Address',
                         border: OutlineInputBorder(),
+                        hintText: 'Enter your full delivery address',
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Enter address' : null,
+                      validator: (value) => value == null || value.isEmpty ? 'Please enter delivery address' : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -171,8 +296,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Phone Number',
                         border: OutlineInputBorder(),
+                        hintText: 'e.g., 07XXXXXXXX or +256XXXXXXXXX',
                       ),
-                      validator: (value) => value == null || value.isEmpty ? 'Enter phone number' : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter phone number';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -181,6 +312,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       decoration: const InputDecoration(
                         labelText: 'Delivery Instructions (Optional)',
                         border: OutlineInputBorder(),
+                        hintText: 'E.g., Gate code, landmark, etc.',
                       ),
                     ),
                   ],
@@ -226,7 +358,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
                         : const Text('Place Order', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
                 ),

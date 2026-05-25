@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'auth/login_screen.dart'; // Add this import for navigation
+import 'auth/login_screen.dart';
 import 'auth/logout_screen.dart';
+import 'edit_profile_screen.dart';
 
-class ProfileScreen extends StatefulWidget { // Changed to StatefulWidget to handle user data
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
@@ -14,6 +15,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoggedIn = false;
   String _userName = 'Guest User';
   String _userEmail = 'Please sign in to access your account';
+  String _userPhone = '';
+  String _userRole = '';
 
   @override
   void initState() {
@@ -26,8 +29,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       if (_isLoggedIn) {
-        _userName = prefs.getString('user_name') ?? 'John Doe';
-        _userEmail = prefs.getString('user_email') ?? 'john.doe@email.com';
+        _userName = prefs.getString('user_name') ?? 'User';
+        _userEmail = prefs.getString('user_email') ?? '';
+        _userPhone = prefs.getString('user_phone') ?? '';
+        _userRole = prefs.getString('user_role') ?? '';
       }
     });
   }
@@ -40,6 +45,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          if (_isLoggedIn)
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(
+                      userName: _userName,
+                      userEmail: _userEmail,
+                      userPhone: _userPhone,
+                    ),
+                  ),
+                ).then((_) => _loadUserData());
+              },
+            ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -48,20 +71,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Center(
             child: Column(
               children: [
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.green, width: 3),
-                  ),
-                  child: const CircleAvatar(
-                    radius: 48,
-                    backgroundColor: Colors.green,
-                    child: Icon(
-                      Icons.person,
-                      size: 50,
-                      color: Colors.white,
+                Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.green, width: 3),
+                      ),
+                      child: CircleAvatar(
+                        radius: 48,
+                        backgroundColor: Colors.green,
+                        child: Text(
+                          _isLoggedIn && _userName != 'Guest User'
+                              ? _userName.substring(0, 1).toUpperCase()
+                              : 'U',
+                          style: const TextStyle(
+                            fontSize: 40,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (_isLoggedIn)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => EditProfileScreen(
+                                  userName: _userName,
+                                  userEmail: _userEmail,
+                                  userPhone: _userPhone,
+                                ),
+                              ),
+                            ).then((_) => _loadUserData());
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.green, width: 2),
+                            ),
+                            child: const Icon(
+                              Icons.camera_alt,
+                              size: 20,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 Text(
@@ -79,6 +143,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.grey.shade600,
                   ),
                 ),
+                if (_isLoggedIn && _userPhone.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    _userPhone,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+                if (_isLoggedIn && _userRole.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _userRole == 'bulk' ? Colors.orange.shade50 : Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      _userRole == 'bulk' ? 'Bulk Seller' : 'Immediate Buyer',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _userRole == 'bulk' ? Colors.orange.shade700 : Colors.green.shade700,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -92,7 +184,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                ).then((_) => _loadUserData()); // Reload data when returning
+                ).then((_) => _loadUserData());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -120,10 +212,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Personal Information',
             onTap: () {
               if (_isLoggedIn) {
-                // Navigate to personal info screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Personal Information - Coming Soon')),
-                );
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(
+                      userName: _userName,
+                      userEmail: _userEmail,
+                      userPhone: _userPhone,
+                    ),
+                  ),
+                ).then((_) => _loadUserData());
               } else {
                 _showLoginRequired(context);
               }
@@ -135,10 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Delivery Address',
             onTap: () {
               if (_isLoggedIn) {
-                // Navigate to addresses screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Delivery Address - Coming Soon')),
-                );
+                _showComingSoon(context, 'Delivery Address');
               } else {
                 _showLoginRequired(context);
               }
@@ -146,14 +241,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           
           _buildMenuItem(
-            Icons.payment_outlined,
-            'Payment Methods',
+            Icons.lock_outline,
+            'Change Password',
             onTap: () {
               if (_isLoggedIn) {
-                // Navigate to payment methods screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Payment Methods - Coming Soon')),
-                );
+                _showComingSoon(context, 'Change Password');
               } else {
                 _showLoginRequired(context);
               }
@@ -165,10 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Order History',
             onTap: () {
               if (_isLoggedIn) {
-                // Navigate to order history screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Order History - Coming Soon')),
-                );
+                _showComingSoon(context, 'Order History');
               } else {
                 _showLoginRequired(context);
               }
@@ -180,10 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Favorites',
             onTap: () {
               if (_isLoggedIn) {
-                // Navigate to favorites screen
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Favorites - Coming Soon')),
-                );
+                _showComingSoon(context, 'Favorites');
               } else {
                 _showLoginRequired(context);
               }
@@ -194,10 +280,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.settings_outlined,
             'Settings',
             onTap: () {
-              // Settings can be accessed even when not logged in
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings - Coming Soon')),
-              );
+              _showComingSoon(context, 'Settings');
+            },
+          ),
+          
+          _buildMenuItem(
+            Icons.help_outline,
+            'Help & Support',
+            onTap: () {
+              _showHelpDialog();
             },
           ),
           
@@ -209,7 +300,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LogoutScreen()),
-                ).then((_) => _loadUserData()); // Reload data when returning
+                ).then((_) => _loadUserData());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -277,7 +368,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context); // Close dialog
+              Navigator.pop(context);
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -287,6 +378,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
               foregroundColor: Colors.green,
             ),
             child: const Text('Sign In'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature - Coming Soon'),
+        backgroundColor: Colors.orange,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Help & Support'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: const [
+            Text('📞 Phone: +256 123 456 789'),
+            SizedBox(height: 8),
+            Text('📧 Email: support@ankorefresh.com'),
+            SizedBox(height: 8),
+            Text('💬 WhatsApp: +256 123 456 789'),
+            SizedBox(height: 16),
+            Text(
+              'Business Hours:',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text('Monday - Friday: 8am - 6pm'),
+            Text('Saturday: 9am - 4pm'),
+            Text('Sunday: Closed'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
         ],
       ),

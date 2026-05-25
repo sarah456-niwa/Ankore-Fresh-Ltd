@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'verification_screen.dart';
 import 'login_screen.dart';
+import '../main_app_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final String? userRole;
@@ -14,6 +16,7 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
+  final _phoneController = TextEditingController(); // Added phone field
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
@@ -24,6 +27,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   
   final _formKey = GlobalKey<FormState>();
   bool _isBulkBuyer = false;
+  bool _isLoading = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
 
   @override
   void initState() {
@@ -35,6 +41,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
+    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _storeNameController.dispose();
@@ -46,70 +53,65 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   Future<void> _handleRegistration() async {
     if (!_formKey.currentState!.validate()) return;
     
-    // Show loading indicator
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(color: Colors.green),
-      ),
-    );
+    setState(() {
+      _isLoading = true;
+    });
     
+    // Simulate API call delay
     await Future.delayed(const Duration(seconds: 1));
     
-    if (!context.mounted) return;
+    // Save user data to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('is_logged_in', true);
+    await prefs.setString('user_name', _fullNameController.text);
+    await prefs.setString('user_email', _emailController.text);
+    await prefs.setString('user_phone', _phoneController.text);
+    await prefs.setString('user_role', _isBulkBuyer ? 'bulk' : 'immediate');
+    await prefs.setString('user_id', DateTime.now().millisecondsSinceEpoch.toString());
     
-    // Close loading dialog
-    Navigator.pop(context);
-    
-    // Create user data map - FIXED SYNTAX
-    Map<String, dynamic> userData = {
-      'fullName': _fullNameController.text,
-      'email': _emailController.text,
-      'password': _passwordController.text,
-      'role': _isBulkBuyer ? 'bulk' : 'immediate',
-    };
-    
-    // Add business fields only for bulk buyers - NO SPREAD OPERATOR
     if (_isBulkBuyer) {
-      userData['storeName'] = _storeNameController.text;
-      userData['businessAddress'] = _businessAddressController.text;
+      await prefs.setString('store_name', _storeNameController.text);
+      await prefs.setString('business_address', _businessAddressController.text);
       if (_taxIdController.text.isNotEmpty) {
-        userData['taxId'] = _taxIdController.text;
+        await prefs.setString('tax_id', _taxIdController.text);
       }
     }
     
-    print('Registration data: $userData');
+    setState(() {
+      _isLoading = false;
+    });
     
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              _isBulkBuyer ? Icons.store : Icons.person,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                _isBulkBuyer
-                    ? 'Verification code sent to your email. Your seller account will be verified.'
-                    : 'Verification code sent to your email',
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                _isBulkBuyer ? Icons.store : Icons.person,
+                color: Colors.white,
+                size: 20,
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _isBulkBuyer
+                      ? 'Registration successful! Your seller account is pending verification.'
+                      : 'Registration successful! Welcome to Ankore Fresh!',
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: _isBulkBuyer ? Colors.orange : Colors.green,
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
         ),
-        backgroundColor: _isBulkBuyer ? Colors.orange : Colors.blue,
-        duration: const Duration(seconds: 3),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-    
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const VerificationScreen()),
-    );
+      );
+      
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const MainAppScreen()),
+      );
+    }
   }
 
   @override
@@ -222,14 +224,49 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 const SizedBox(height: 20),
                 
                 TextFormField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    hintText: '+256XXXXXXXXX',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    prefixIcon: const Icon(Icons.phone_android),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your phone number';
+                    }
+                    if (value.length < 10) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 20),
+                
+                // Password Field with Eye Icon
+                TextFormField(
                   controller: _passwordController,
-                  obscureText: true,
+                  obscureText: !_isPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Password',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isPasswordVisible = !_isPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -243,15 +280,27 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ),
                 const SizedBox(height: 20),
                 
+                // Confirm Password Field with Eye Icon
                 TextFormField(
                   controller: _confirmPasswordController,
-                  obscureText: true,
+                  obscureText: !_isConfirmPasswordVisible,
                   decoration: InputDecoration(
                     labelText: 'Confirm Password',
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
                     prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                        color: Colors.grey,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                        });
+                      },
+                    ),
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -377,7 +426,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 const SizedBox(height: 30),
                 
                 ElevatedButton(
-                  onPressed: _handleRegistration,
+                  onPressed: _isLoading ? null : _handleRegistration,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: _isBulkBuyer ? Colors.orange : Colors.green,
                     foregroundColor: Colors.white,
@@ -386,10 +435,19 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  child: Text(
-                    _isBulkBuyer ? 'Register as Seller' : 'Create Account',
-                    style: const TextStyle(fontSize: 18),
-                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          _isBulkBuyer ? 'Register as Seller' : 'Create Account',
+                          style: const TextStyle(fontSize: 18),
+                        ),
                 ),
                 
                 const SizedBox(height: 20),

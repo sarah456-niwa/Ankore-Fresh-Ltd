@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/cart_provider.dart';
 import 'screens/splash_screen.dart';
+import 'providers/user_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,13 +17,30 @@ class MyApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
       ],
       child: MaterialApp(
         title: 'Ankore Fresh LTD',
-        debugShowCheckedModeBanner: false,
+        debugShowCheckedModeBanner: false,  // Removes "AA"
         theme: ThemeData(
           primarySwatch: Colors.green,
           fontFamily: 'Poppins',
+          // Force green colors for web
+          colorScheme: const ColorScheme.light(
+            primary: Colors.green,
+            secondary: Colors.green,
+          ),
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.green,
+            foregroundColor: Colors.white,
+            elevation: 0,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ),
         home: const SplashScreen(),
       ),

@@ -1,16 +1,34 @@
 // lib/screens/order_success_screen.dart
 import 'package:flutter/material.dart';
+import '../models/order.dart';
+import 'order_tracking_screen.dart';
 import 'main_app_screen.dart';
 
 class OrderSuccessScreen extends StatelessWidget {
-  final String orderNumber;
-  final double total;
+  final Order order;
 
   const OrderSuccessScreen({
     super.key,
-    required this.orderNumber,
-    required this.total,
+    required this.order,
   });
+
+  void _navigateToHome(BuildContext context) {
+    final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
+    if (mainAppScreen != null) {
+      mainAppScreen.changeTab(0);
+    } else {
+      Navigator.popUntil(context, (route) => route.isFirst);
+    }
+  }
+
+  void _navigateToTracking(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OrderTrackingScreen(order: order),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +63,7 @@ class OrderSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               Text(
-                'Order #: $orderNumber',
+                'Order #: ${order.orderNumber}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
@@ -53,7 +71,7 @@ class OrderSuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Total Amount: UGX ${total.toStringAsFixed(0)}',
+                'Total Amount: UGX ${order.total.toStringAsFixed(0)}',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -61,6 +79,37 @@ class OrderSuccessScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              
+              // Order Status Card
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: order.getStatusColor().withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      order.getStatusIcon(),
+                      size: 20,
+                      color: order.getStatusColor(),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Status: ${order.statusDisplay}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: order.getStatusColor(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 20),
+              
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -73,28 +122,28 @@ class OrderSuccessScreen extends StatelessWidget {
                     SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'You will receive a confirmation email and SMS shortly. You can track your order in the Orders section.',
+                        'You will receive a confirmation email and SMS shortly. You can track your order in real-time.',
                         style: TextStyle(color: Colors.blue),
                       ),
                     ),
                   ],
                 ),
               ),
+              
               const SizedBox(height: 40),
+              
               Row(
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
-                        if (mainAppScreen != null) {
-                          mainAppScreen.changeTab(0);
-                        }
-                      },
+                      onPressed: () => _navigateToHome(context),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.green),
                         foregroundColor: Colors.green,
                         padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
                       child: const Text('Continue Shopping'),
                     ),
@@ -102,19 +151,23 @@ class OrderSuccessScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();
-                        if (mainAppScreen != null) {
-                          // Navigate to orders tab (add this later)
-                          mainAppScreen.changeTab(0);
-                        }
-                      },
+                      onPressed: () => _navigateToTracking(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 15),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      child: const Text('Track Order'),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.track_changes, size: 20),
+                          SizedBox(width: 8),
+                          Text('Track Order'),
+                        ],
+                      ),
                     ),
                   ),
                 ],

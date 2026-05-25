@@ -1,117 +1,254 @@
 // lib/services/order_service.dart
-import 'api_service.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/order.dart';
+import 'api_service.dart';
 
 class OrderService {
   final ApiService _apiService = ApiService();
   
-  // Place order
-  Future<Map<String, dynamic>> placeOrder({
-    required String deliveryAddress,
-    required String deliveryPhone,
-    required String paymentMethod,
-    String? deliveryInstructions,
-    String? notes,
-  }) async {
+  // Get all orders for current user (both past and current)
+  Future<List<Order>> getUserOrders() async {
     try {
-      final response = await _apiService.post('orders/create/', {
-        'delivery_address': deliveryAddress,
-        'delivery_phone': deliveryPhone,
-        'payment_method': paymentMethod,
-        'delivery_instructions': deliveryInstructions ?? '',
-        'notes': notes ?? '',
-      });
+      print('📦 Fetching user orders...');
+      final response = await _apiService.get('orders/');
       
-      return response;
-    } catch (e) {
-      throw Exception('Failed to place order: ${e.toString()}');
-    }
-  }
-  
-  // Get user orders
-  Future<List<Map<String, dynamic>>> getOrders({
-    int page = 1,
-    int perPage = 20,
-    String? status,
-  }) async {
-    try {
-      String endpoint = 'orders/?page=$page&per_page=$perPage';
-      if (status != null && status.isNotEmpty) {
-        endpoint += '&status=$status';
-      }
-      
-      final response = await _apiService.get(endpoint);
-      
-      if (response['results'] is List) {
-        return List<Map<String, dynamic>>.from(response['results']);
-      }
+      print('✅ Orders response received');
       
       if (response is List) {
-        return List<Map<String, dynamic>>.from(response);
+        print('📦 Found ${response.length} orders');
+        return response.map((json) => Order.fromJson(json)).toList();
       }
       
+      if (response != null && response['results'] is List) {
+        final orders = response['results'] as List;
+        print('📦 Found ${orders.length} orders');
+        return orders.map((json) => Order.fromJson(json)).toList();
+      }
+      
+      print('⚠️ No orders found');
       return [];
     } catch (e) {
-      throw Exception('Failed to load orders: ${e.toString()}');
+      print('❌ Error fetching orders: $e');
+      return [];
     }
   }
   
-  // Get order by ID
-  Future<Map<String, dynamic>> getOrderById(int orderId) async {
+  // Get single order details
+  Future<Order?> getOrderDetails(int orderId) async {
     try {
+      print('📦 Fetching order details for ID: $orderId');
       final response = await _apiService.get('orders/$orderId/');
-      return response;
+      print('✅ Order details received');
+      return Order.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to load order: ${e.toString()}');
+      print('❌ Error fetching order details: $e');
+      return null;
     }
   }
   
-  // Get order by order number (for tracking)
-  Future<Map<String, dynamic>> getOrderByNumber(String orderNumber) async {
+  // Get order details by order number (with fallback)
+  Future<Order?> getOrderByNumber(String orderNumber) async {
     try {
+      print('📦 Fetching order by number: $orderNumber');
       final response = await _apiService.get('orders/track/$orderNumber/');
-      return response;
+      print('✅ Order found via tracking endpoint');
+      return Order.fromJson(response);
     } catch (e) {
-      throw Exception('Failed to track order: ${e.toString()}');
+      print('❌ Error fetching order by number from tracking: $e');
+      
+      // Fallback: Try to get from orders list
+      try {
+        final allOrders = await getUserOrders();
+        final order = allOrders.firstWhere(
+          (o) => o.orderNumber == orderNumber,
+          orElse: () => throw Exception('Order not found'),
+        );
+        print('✅ Order found via orders list');
+        return order;
+      } catch (e2) {
+        print('❌ Order not found: $e2');
+        return null;
+      }
     }
   }
   
   // Cancel order
-  Future<Map<String, dynamic>> cancelOrder(int orderId, {String? reason}) async {
+  Future<bool> cancelOrder(int orderId, {String? reason}) async {
     try {
-      final response = await _apiService.post('orders/$orderId/cancel/', {
+      print('📦 Cancelling order: $orderId');
+      final response = await _apiService.post('orders/${orderId}/cancel/', {
         'reason': reason ?? 'Cancelled by user',
       });
-      return response;
+      print('✅ Order cancelled successfully');
+      return response['message'] != null;
     } catch (e) {
-      throw Exception('Failed to cancel order: ${e.toString()}');
+      print('❌ Error cancelling order: $e');
+      return false;
     }
   }
   
-  // Track order
+  // Track order status
   Future<Map<String, dynamic>> trackOrder(String orderNumber) async {
     try {
+      print('📦 Tracking order: $orderNumber');
       final response = await _apiService.get('orders/track/$orderNumber/');
+      print('✅ Tracking information received');
       return response;
     } catch (e) {
-      throw Exception('Failed to track order: ${e.toString()}');
+      print('❌ Error tracking order: $e');
+      return {};
     }
   }
   
-  // Rate order
-  Future<Map<String, dynamic>> rateOrder({
-    required int orderId,
-    required int rating,
-    String? feedback,
-  }) async {
+  // Place new order
+  Future<Map<String, dynamic>> placeOrder(Map<String, dynamic> orderData) async {
     try {
-      final response = await _apiService.post('orders/$orderId/rate/', {
+      print('📦 Placing new order...');
+      print('📦 Order data: $orderData');
+      
+      final response = await _apiService.post('orders/create/', orderData);
+      
+      print('✅ Order placed successfully');
+      print('📦 Order number: ${response['order_number']}');
+      print('📦 Order ID: ${response['id']}');
+      
+      return {
+        'success': true,
+        'order_number': response['order_number'],
+        'order_id': response['id'],
+        'message': 'Order placed successfully',
+      };
+    } catch (e) {
+      print('❌ Error placing order: $e');
+      return {
+        'success': false,
+        'message': 'Failed to place order: ${e.toString()}',
+      };
+    }
+  }
+  
+  // Get order status history
+  Future<List<Map<String, dynamic>>> getOrderStatusHistory(int orderId) async {
+    try {
+      print('📦 Fetching status history for order: $orderId');
+      final response = await _apiService.get('orders/${orderId}/status/');
+      
+      if (response is List) {
+        return response.map((item) => Map<String, dynamic>.from(item)).toList();
+      }
+      
+      return [];
+    } catch (e) {
+      print('❌ Error fetching status history: $e');
+      return [];
+    }
+  }
+  
+  // Rate order (after delivery)
+  Future<bool> rateOrder(int orderId, int rating, {String? feedback}) async {
+    try {
+      print('📦 Rating order: $orderId with rating: $rating');
+      final response = await _apiService.post('orders/${orderId}/rate/', {
         'rating': rating,
         'feedback': feedback ?? '',
       });
-      return response;
+      print('✅ Order rated successfully');
+      return response['message'] != null;
     } catch (e) {
-      throw Exception('Failed to rate order: ${e.toString()}');
+      print('❌ Error rating order: $e');
+      return false;
+    }
+  }
+  
+  // Request order return/refund
+  Future<bool> requestReturn(int orderId, String reason, {String? details}) async {
+    try {
+      print('📦 Requesting return for order: $orderId');
+      final response = await _apiService.post('orders/${orderId}/return/', {
+        'reason': reason,
+        'details': details ?? '',
+      });
+      print('✅ Return request submitted');
+      return response['message'] != null;
+    } catch (e) {
+      print('❌ Error requesting return: $e');
+      return false;
+    }
+  }
+  
+  // Get order statistics for user
+  Future<Map<String, dynamic>> getOrderStatistics() async {
+    try {
+      print('📦 Fetching order statistics...');
+      final orders = await getUserOrders();
+      
+      int totalOrders = orders.length;
+      int completedOrders = orders.where((o) => o.status == 'delivered').length;
+      int pendingOrders = orders.where((o) => o.status == 'pending').length;
+      int cancelledOrders = orders.where((o) => o.status == 'cancelled').length;
+      double totalSpent = orders.fold(0.0, (sum, order) => sum + order.total);
+      
+      return {
+        'total_orders': totalOrders,
+        'completed_orders': completedOrders,
+        'pending_orders': pendingOrders,
+        'cancelled_orders': cancelledOrders,
+        'total_spent': totalSpent,
+      };
+    } catch (e) {
+      print('❌ Error fetching order statistics: $e');
+      return {
+        'total_orders': 0,
+        'completed_orders': 0,
+        'pending_orders': 0,
+        'cancelled_orders': 0,
+        'total_spent': 0.0,
+      };
+    }
+  }
+  
+  // Get recent orders (last 5)
+  Future<List<Order>> getRecentOrders() async {
+    try {
+      final allOrders = await getUserOrders();
+      return allOrders.take(5).toList();
+    } catch (e) {
+      print('❌ Error fetching recent orders: $e');
+      return [];
+    }
+  }
+  
+  // Check if order can be cancelled
+  Future<bool> canCancelOrder(int orderId) async {
+    try {
+      final order = await getOrderDetails(orderId);
+      return order?.canCancel ?? false;
+    } catch (e) {
+      print('❌ Error checking cancel status: $e');
+      return false;
+    }
+  }
+  
+  // Reorder - add all items from previous order to cart
+  Future<List<Map<String, dynamic>>> getReorderItems(int orderId) async {
+    try {
+      final order = await getOrderDetails(orderId);
+      if (order == null) return [];
+      
+      final items = order.items.map((item) {
+        return {
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'quantity': item.quantity,
+          'price': item.price,
+        };
+      }).toList();
+      
+      return items;
+    } catch (e) {
+      print('❌ Error getting reorder items: $e');
+      return [];
     }
   }
 }
