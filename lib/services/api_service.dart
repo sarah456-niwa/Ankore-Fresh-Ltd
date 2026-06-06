@@ -214,8 +214,13 @@ class ApiService {
         }
         return json.decode(response.body);
       case 400:
-        final error = json.decode(response.body);
-        throw Exception(error.toString());
+        try {
+          final error = json.decode(response.body);
+          throw Exception(_parseApiError(error));
+        } catch (e) {
+          if (e is Exception) rethrow;
+          throw Exception('Bad request: ${response.body}');
+        }
       case 401:
         throw Exception('Unauthorized. Please login again.');
       case 403:
@@ -336,11 +341,34 @@ class ApiService {
         print('✅ Session login successful');
         return {'success': true, 'message': 'Login successful', 'user': data['user']};
       } else {
-        return {'success': false, 'message': data.get('message', 'Login failed')};
+        return {'success': false, 'message': data['message'] ?? 'Login failed'};
       }
     } catch (e) {
       print('❌ Login error: $e');
       return {'success': false, 'message': e.toString()};
     }
+  }
+
+  String _parseApiError(dynamic error) {
+    try {
+      if (error is Map) {
+        List<String> messages = [];
+        error.forEach((key, value) {
+          final cleanKey = key.toString().replaceAll('_', ' ');
+          final capitalizedKey = cleanKey.isNotEmpty 
+              ? cleanKey[0].toUpperCase() + cleanKey.substring(1)
+              : '';
+          if (value is List) {
+            messages.add('$capitalizedKey: ${value.join(", ")}');
+          } else {
+            messages.add('$capitalizedKey: $value');
+          }
+        });
+        return messages.join('\n');
+      } else if (error is List) {
+        return error.join('\n');
+      }
+    } catch (_) {}
+    return error.toString();
   }
 }

@@ -1,7 +1,9 @@
 // lib/screens/order_tracking_screen.dart
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/order.dart';
 import '../services/order_service.dart';
+import '../services/order_websocket_service.dart';
 
 class OrderTrackingScreen extends StatefulWidget {
   final Order order;
@@ -15,21 +17,66 @@ class OrderTrackingScreen extends StatefulWidget {
 class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   late Order _order;
   final OrderService _orderService = OrderService();
+  final OrderWebSocketService _wsService = OrderWebSocketService();
   bool _isLoading = false;
   bool _isRefreshing = false;
+  bool _wsConnected = false;
+  late StreamSubscription<String> _connectionStatusSubscription;
+  late StreamSubscription<Order> _orderUpdateSubscription;
 
   @override
   void initState() {
     super.initState();
     _order = widget.order;
-    _startAutoRefresh();
+    _initializeWebSocket();
   }
 
-  void _startAutoRefresh() {
-    Future.delayed(const Duration(seconds: 10), () {
+  void _initializeWebSocket() {
+    // Listen to connection status changes
+    _connectionStatusSubscription = _wsService.connectionStatus.listen((status) {
       if (mounted) {
+        setState(() {
+          _wsConnected = status == 'connected';
+        });
+      }
+      print('📡 WebSocket status: $status');
+    });
+    
+    // Listen to order updates
+    _orderUpdateSubscription = _wsService.orderUpdates.listen((updatedOrder) {
+      if (mounted) {
+        setState(() {
+          _order = updatedOrder;
+        });
+      }
+      print('🔄 Order updated via WebSocket: ${_order.status}');
+    });
+    
+    // Connect to WebSocket
+    _connectWebSocket();
+  }
+
+  Future<void> _connectWebSocket() async {
+    print('🔗 Attempting WebSocket connection for order ${_order.orderNumber}');
+    final success = await _wsService.connectToOrder(_order.orderNumber);
+    
+    if (mounted && success) {
+      print('✅ WebSocket connected successfully');
+      // Fallback to polling if WebSocket is not available
+      _setupFallbackPolling();
+    } else if (mounted) {
+      print('⚠️ WebSocket connection failed, using polling as fallback');
+      // If WebSocket fails, use polling as fallback
+      _setupFallbackPolling();
+    }
+  }
+
+  void _setupFallbackPolling() {
+    // Start fallback polling every 5 seconds if WebSocket is not connected
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted && !_wsConnected) {
         _refreshOrderStatus();
-        _startAutoRefresh();
+        _setupFallbackPolling();
       }
     });
   }
@@ -41,7 +88,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       _isRefreshing = true;
     });
     
-    final updatedOrder = await _orderService.getOrderDetails(_order.id);
+    final updatedOrder = await _orderService.getOrderByNumber(_order.orderNumber);
     if (updatedOrder != null && mounted) {
       setState(() {
         _order = updatedOrder;
@@ -54,10 +101,34 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
 
   @override
+  void dispose() {
+    _connectionStatusSubscription.cancel();
+    _orderUpdateSubscription.cancel();
+    _wsService.disconnect();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Track Order ${_order.orderNumber}'),
+        title: Row(
+          children: [
+            Text('Track Order ${_order.orderNumber}'),
+            const SizedBox(width: 8),
+            Tooltip(
+              message: _wsConnected ? 'Live updates enabled' : 'Using polling',
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _wsConnected ? Colors.lightGreenAccent : Colors.orange,
+                ),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
         actions: [
@@ -73,6 +144,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   )
                 : const Icon(Icons.refresh),
             onPressed: _refreshOrderStatus,
+            tooltip: 'Refresh order status',
           ),
         ],
       ),
@@ -85,6 +157,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Connection Status Banner
+              if (!_wsConnected)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade100,
+                    border: Border.all(color: Colors.orange.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info, color: Colors.orange.shade700, size: 20),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Using polling for updates (WebSocket unavailable)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              
               // Delivery Progress Card
               _buildDeliveryProgressCard(),
               
@@ -114,6 +213,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               
               // Timeline History
               _buildTimelineCard(),
+              
+              const SizedBox(height: 20),
+              
+              // Cancel Order Button (if order can be cancelled)
+              if (_order.status == 'pending' || _order.status == 'confirmed')
+                _buildCancelOrderButton(),
               
               const SizedBox(height: 80),
             ],
@@ -491,7 +596,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                               style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                             ),
                           Text(
-                            _formatDateTime(DateTime.parse(tracking['timestamp'])),
+                            _formatDateTime(DateTime.parse(tracking['timestamp'] ?? tracking['created_at'])),
                             style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
                           ),
                         ],
@@ -508,5 +613,143 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   String _formatDateTime(DateTime date) {
     return '${date.day}/${date.month}/${date.year} at ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  Widget _buildCancelOrderButton() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.red.shade50,
+        border: Border.all(color: Colors.red.shade200),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red.shade700, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'You can cancel this order',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _isLoading ? null : _handleCancelOrder,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              icon: _isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.close),
+              label: Text(_isLoading ? 'Cancelling...' : 'Cancel Order'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleCancelOrder() async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        title: const Text('Cancel Order?'),
+        content: const Text('Are you sure you want to cancel this order? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('No, Keep It'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Yes, Cancel Order'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final cancelled = await _orderService.cancelOrder(
+        _order.id,
+        reason: 'Cancelled by customer',
+      );
+
+      if (cancelled && mounted) {
+        // Refresh order status to get updated data
+        final updatedOrder = await _orderService.getOrderByNumber(_order.orderNumber);
+        if (updatedOrder != null && mounted) {
+          setState(() {
+            _order = updatedOrder;
+            _isLoading = false;
+          });
+        }
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✅ Order cancelled successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // Navigate back after 2 seconds
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          Navigator.pop(context);
+        }
+      } else if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('❌ Failed to cancel order'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }

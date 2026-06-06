@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/product_service.dart';
+import '../services/notification_service.dart';
 import '../models/product.dart';
 import '../models/category.dart';
 import '../providers/cart_provider.dart';
@@ -10,6 +11,7 @@ import 'main_app_screen.dart';
 import 'search_screen.dart';
 import 'products_screen.dart';
 import 'product_details_screen.dart';
+import 'notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,6 +22,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ProductService _productService = ProductService();
+  final NotificationService _notificationService = NotificationService();
   List<Product> _products = [];
   List<Category> _categories = [];
   bool _isLoading = true;
@@ -29,6 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadData();
+    // Start polling for notifications
+    _notificationService.startPolling(interval: const Duration(seconds: 15));
+  }
+
+  @override
+  void dispose() {
+    _notificationService.stopPolling();
+    _notificationService.dispose();
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -226,7 +238,50 @@ class _HomeScreenState extends State<HomeScreen> {
         elevation: 2,
         actions: [
           IconButton(icon: const Icon(Icons.search), onPressed: _openSearch, tooltip: 'Search products'),
-          IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: () {}, tooltip: 'Notifications'),
+          StreamBuilder<int>(
+            stream: _notificationService.unreadCount,
+            builder: (context, snapshot) {
+              final unreadCount = snapshot.data ?? 0;
+              return Stack(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => NotificationsScreen()),
+                      );
+                    },
+                    tooltip: 'Notifications',
+                  ),
+                  if (unreadCount > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+                        child: Center(
+                          child: Text(
+                            unreadCount > 99 ? '99+' : '$unreadCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {

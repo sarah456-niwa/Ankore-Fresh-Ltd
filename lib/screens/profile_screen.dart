@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../providers/user_provider.dart';
 import 'auth/login_screen.dart';
 import 'auth/logout_screen.dart';
 import 'edit_profile_screen.dart';
@@ -12,33 +13,15 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  bool _isLoggedIn = false;
-  String _userName = 'Guest User';
-  String _userEmail = 'Please sign in to access your account';
-  String _userPhone = '';
-  String _userRole = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-      if (_isLoggedIn) {
-        _userName = prefs.getString('user_name') ?? 'User';
-        _userEmail = prefs.getString('user_email') ?? '';
-        _userPhone = prefs.getString('user_phone') ?? '';
-        _userRole = prefs.getString('user_role') ?? '';
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final userProvider = context.watch<UserProvider>();
+    final isLoggedIn = userProvider.isAuthenticated;
+    final userName = isLoggedIn ? (userProvider.user?['full_name'] ?? 'User') : 'Guest User';
+    final userEmail = isLoggedIn ? (userProvider.user?['email'] ?? '') : 'Please sign in to access your account';
+    final userPhone = isLoggedIn ? (userProvider.user?['phone'] ?? '') : '';
+    final userRole = isLoggedIn ? (userProvider.user?['role'] ?? '') : '';
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('My Profile'),
@@ -46,7 +29,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
-          if (_isLoggedIn)
+          if (isLoggedIn)
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: () {
@@ -54,12 +37,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditProfileScreen(
-                      userName: _userName,
-                      userEmail: _userEmail,
-                      userPhone: _userPhone,
+                      userName: userName,
+                      userEmail: userEmail,
+                      userPhone: userPhone,
                     ),
                   ),
-                ).then((_) => _loadUserData());
+                ).then((_) => context.read<UserProvider>().refreshUserData());
               },
             ),
         ],
@@ -82,8 +65,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         radius: 48,
                         backgroundColor: Colors.green,
                         child: Text(
-                          _isLoggedIn && _userName != 'Guest User'
-                              ? _userName.substring(0, 1).toUpperCase()
+                          isLoggedIn && userName != 'Guest User' && userName.isNotEmpty
+                              ? userName.substring(0, 1).toUpperCase()
                               : 'U',
                           style: const TextStyle(
                             fontSize: 40,
@@ -93,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                       ),
                     ),
-                    if (_isLoggedIn)
+                    if (isLoggedIn)
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -103,12 +86,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => EditProfileScreen(
-                                  userName: _userName,
-                                  userEmail: _userEmail,
-                                  userPhone: _userPhone,
+                                  userName: userName,
+                                  userEmail: userEmail,
+                                  userPhone: userPhone,
                                 ),
                               ),
-                            ).then((_) => _loadUserData());
+                            ).then((_) => context.read<UserProvider>().refreshUserData());
                           },
                           child: Container(
                             padding: const EdgeInsets.all(4),
@@ -129,7 +112,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  _userName,
+                  userName,
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -137,36 +120,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  _userEmail,
+                  userEmail,
                   style: TextStyle(
                     fontSize: 16,
                     color: Colors.grey.shade600,
                   ),
                 ),
-                if (_isLoggedIn && _userPhone.isNotEmpty) ...[
+                if (isLoggedIn && userPhone.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Text(
-                    _userPhone,
+                    userPhone,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade500,
                     ),
                   ),
                 ],
-                if (_isLoggedIn && _userRole.isNotEmpty) ...[
+                if (isLoggedIn && userRole.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _userRole == 'bulk' ? Colors.orange.shade50 : Colors.green.shade50,
+                      color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      _userRole == 'bulk' ? 'Bulk Seller' : 'Immediate Buyer',
+                      'Immediate Buyer',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: _userRole == 'bulk' ? Colors.orange.shade700 : Colors.green.shade700,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ),
@@ -178,13 +161,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 32),
           
           // If not logged in, show sign in button
-          if (!_isLoggedIn) ...[
+          if (!isLoggedIn) ...[
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginScreen()),
-                ).then((_) => _loadUserData());
+                ).then((_) => context.read<UserProvider>().refreshUserData());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
@@ -211,17 +194,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.person_outline,
             'Personal Information',
             onTap: () {
-              if (_isLoggedIn) {
+              if (isLoggedIn) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => EditProfileScreen(
-                      userName: _userName,
-                      userEmail: _userEmail,
-                      userPhone: _userPhone,
+                      userName: userName,
+                      userEmail: userEmail,
+                      userPhone: userPhone,
                     ),
                   ),
-                ).then((_) => _loadUserData());
+                ).then((_) => context.read<UserProvider>().refreshUserData());
               } else {
                 _showLoginRequired(context);
               }
@@ -232,7 +215,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.location_on_outlined,
             'Delivery Address',
             onTap: () {
-              if (_isLoggedIn) {
+              if (isLoggedIn) {
                 _showComingSoon(context, 'Delivery Address');
               } else {
                 _showLoginRequired(context);
@@ -244,7 +227,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.lock_outline,
             'Change Password',
             onTap: () {
-              if (_isLoggedIn) {
+              if (isLoggedIn) {
                 _showComingSoon(context, 'Change Password');
               } else {
                 _showLoginRequired(context);
@@ -256,7 +239,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.history_outlined,
             'Order History',
             onTap: () {
-              if (_isLoggedIn) {
+              if (isLoggedIn) {
                 _showComingSoon(context, 'Order History');
               } else {
                 _showLoginRequired(context);
@@ -268,7 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.favorite_outline,
             'Favorites',
             onTap: () {
-              if (_isLoggedIn) {
+              if (isLoggedIn) {
                 _showComingSoon(context, 'Favorites');
               } else {
                 _showLoginRequired(context);
@@ -293,14 +276,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           
           // Logout button (only show if logged in)
-          if (_isLoggedIn) ...[
+          if (isLoggedIn) ...[
             const SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const LogoutScreen()),
-                ).then((_) => _loadUserData());
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -372,7 +355,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LoginScreen()),
-              ).then((_) => _loadUserData());
+              ).then((_) => context.read<UserProvider>().refreshUserData());
             },
             style: TextButton.styleFrom(
               foregroundColor: Colors.green,

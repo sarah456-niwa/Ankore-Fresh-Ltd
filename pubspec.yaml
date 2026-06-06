@@ -17,6 +17,7 @@ dependencies:
   shared_preferences: ^2.2.2
   intl: ^0.19.0
   shimmer: ^3.0.0
+  web_socket_channel: ^2.4.0
   
   # NEW packages to add
   flutter_staggered_grid_view: ^0.7.0

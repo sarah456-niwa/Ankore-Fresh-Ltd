@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import 'verification_screen.dart';
 import 'login_screen.dart';
+import 'registration_success_screen.dart';
 import '../main_app_screen.dart';
 
 class RegistrationScreen extends StatefulWidget {
@@ -16,17 +19,11 @@ class RegistrationScreen extends StatefulWidget {
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController(); // Added phone field
+  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   
-  // Additional fields for bulk buyers
-  final _storeNameController = TextEditingController();
-  final _businessAddressController = TextEditingController();
-  final _taxIdController = TextEditingController();
-  
   final _formKey = GlobalKey<FormState>();
-  bool _isBulkBuyer = false;
   bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
@@ -34,7 +31,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   @override
   void initState() {
     super.initState();
-    _isBulkBuyer = widget.userRole == 'bulk';
   }
 
   @override
@@ -44,9 +40,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _storeNameController.dispose();
-    _businessAddressController.dispose();
-    _taxIdController.dispose();
     super.dispose();
   }
 
@@ -57,60 +50,74 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       _isLoading = true;
     });
     
-    // Simulate API call delay
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // Save user data to SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('user_name', _fullNameController.text);
-    await prefs.setString('user_email', _emailController.text);
-    await prefs.setString('user_phone', _phoneController.text);
-    await prefs.setString('user_role', _isBulkBuyer ? 'bulk' : 'immediate');
-    await prefs.setString('user_id', DateTime.now().millisecondsSinceEpoch.toString());
-    
-    if (_isBulkBuyer) {
-      await prefs.setString('store_name', _storeNameController.text);
-      await prefs.setString('business_address', _businessAddressController.text);
-      if (_taxIdController.text.isNotEmpty) {
-        await prefs.setString('tax_id', _taxIdController.text);
-      }
-    }
-    
-    setState(() {
-      _isLoading = false;
-    });
-    
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                _isBulkBuyer ? Icons.store : Icons.person,
-                color: Colors.white,
-                size: 20,
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  _isBulkBuyer
-                      ? 'Registration successful! Your seller account is pending verification.'
-                      : 'Registration successful! Welcome to Ankore Fresh!',
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: _isBulkBuyer ? Colors.orange : Colors.green,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-        ),
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final result = await userProvider.register(
+        name: _fullNameController.text.trim(),
+        email: _emailController.text.trim(),
+        phone: _phoneController.text.trim(),
+        password: _passwordController.text,
+        password2: _confirmPasswordController.text,
+        userType: 'immediate',
       );
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainAppScreen()),
-      );
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (result['success']) {
+        if (context.mounted) {
+          // Navigate to success screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RegistrationSuccessScreen(
+                userName: _fullNameController.text.trim(),
+                email: _emailController.text.trim(),
+                userType: 'immediate',
+              ),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(result['message'] ?? 'Registration failed. Please try again.')),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 10),
+                Expanded(child: Text('Network error: ${e.toString()}')),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -122,39 +129,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.green,
-        actions: _isBulkBuyer
-            ? [
-                Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.store,
-                        size: 14,
-                        color: Colors.orange.shade700,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Bulk Seller',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.orange.shade700,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ]
-            : [],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -313,122 +287,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   },
                 ),
                 
-                if (_isBulkBuyer) ...[
-                  const SizedBox(height: 30),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(15),
-                      border: Border.all(color: Colors.orange.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.store, color: Colors.orange.shade700),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Business Information',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.orange.shade800,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        TextFormField(
-                          controller: _storeNameController,
-                          decoration: InputDecoration(
-                            labelText: 'Store/Business Name',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            prefixIcon: Icon(Icons.store, color: Colors.orange.shade700),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                          validator: (value) {
-                            if (_isBulkBuyer && (value == null || value.isEmpty)) {
-                              return 'Please enter your store name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        TextFormField(
-                          controller: _businessAddressController,
-                          maxLines: 2,
-                          decoration: InputDecoration(
-                            labelText: 'Business Address',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            prefixIcon: Icon(Icons.location_on, color: Colors.orange.shade700),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                          validator: (value) {
-                            if (_isBulkBuyer && (value == null || value.isEmpty)) {
-                              return 'Please enter your business address';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        TextFormField(
-                          controller: _taxIdController,
-                          decoration: InputDecoration(
-                            labelText: 'Tax ID / Business Registration (Optional)',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            prefixIcon: Icon(Icons.business, color: Colors.orange.shade700),
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                        
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.info_outline, color: Colors.blue.shade700, size: 16),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Bulk seller accounts require verification. You can start selling after approval.',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.blue.shade700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-                
                 const SizedBox(height: 30),
                 
                 ElevatedButton(
                   onPressed: _isLoading ? null : _handleRegistration,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _isBulkBuyer ? Colors.orange : Colors.green,
+                    backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                     minimumSize: const Size(double.infinity, 55),
                     shape: RoundedRectangleBorder(
@@ -444,9 +308,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : Text(
-                          _isBulkBuyer ? 'Register as Seller' : 'Create Account',
-                          style: const TextStyle(fontSize: 18),
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(fontSize: 18),
                         ),
                 ),
                 

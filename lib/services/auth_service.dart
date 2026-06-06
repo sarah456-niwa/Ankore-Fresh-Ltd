@@ -11,19 +11,32 @@ class AuthService {
     required String email,
     required String password,
     required String phone,
+    String? password2,
     String? userType,
     String? storeName,
     String? businessAddress,
+    String? taxId,
   }) async {
     try {
+      String firstName = name.trim();
+      String lastName = '';
+      final nameParts = name.trim().split(' ');
+      if (nameParts.length > 1) {
+        firstName = nameParts.first;
+        lastName = nameParts.sublist(1).join(' ');
+      }
+
       final response = await _apiService.post('auth/register/', {
-        'name': name,
+        'first_name': firstName,
+        'last_name': lastName,
         'email': email,
         'phone': phone,
         'password': password,
+        'password2': password2 ?? password,
         'user_type': userType ?? 'immediate',
         'store_name': storeName,
         'business_address': businessAddress,
+        'tax_id': taxId,
       });
       
       if (response['access'] != null) {

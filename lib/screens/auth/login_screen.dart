@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../providers/user_provider.dart';
 import '../../services/api_service.dart';  // Fixed import path
 import 'forgot_password_screen.dart';
 import 'registration_screen.dart';
@@ -33,11 +35,9 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
     });
     
-    final apiService = ApiService();
-    
     try {
-      // Call the session login endpoint
-      final result = await apiService.sessionLogin(
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final result = await userProvider.login(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
@@ -47,15 +47,6 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       
       if (result['success']) {
-        // Save user data to SharedPreferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('is_logged_in', true);
-        await prefs.setString('user_name', result['user']['full_name'] ?? _emailController.text.split('@')[0]);
-        await prefs.setString('user_email', result['user']['email'] ?? _emailController.text);
-        await prefs.setString('user_phone', result['user']['phone'] ?? '+2567XXXXXXXX');
-        await prefs.setString('user_role', result['user']['user_type'] ?? 'immediate');
-        await prefs.setString('user_id', result['user']['id'].toString());
-        
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

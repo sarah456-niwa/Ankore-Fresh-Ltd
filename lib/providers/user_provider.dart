@@ -1,11 +1,16 @@
 // lib/providers/user_provider.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart';
+import '../services/api_service.dart';
 
 class UserProvider extends ChangeNotifier {
   bool _isAuthenticated = false;
   bool _isLoading = false;
   Map<String, dynamic>? _user;
+  
+  final AuthService _authService = AuthService();
+  final ApiService _apiService = ApiService();
   
   bool get isAuthenticated => _isAuthenticated;
   bool get isLoading => _isLoading;
@@ -27,79 +32,110 @@ class UserProvider extends ChangeNotifier {
         'phone': prefs.getString('user_phone') ?? '',
         'role': prefs.getString('user_role') ?? 'immediate',
       };
+    } else {
+      _isAuthenticated = false;
+      _user = null;
     }
     
     notifyListeners();
   }
   
-  Future<Map<String, dynamic>> login(String identifier, String password) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
     
-    // Simulate API call
-    await Future.delayed(const Duration(seconds: 1));
-    
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('user_name', identifier.split('@')[0]);
-    await prefs.setString('user_email', identifier);
-    await prefs.setString('user_phone', '+2567XXXXXXXX');
-    await prefs.setString('user_role', 'immediate');
-    
-    _isAuthenticated = true;
-    _user = {
-      'full_name': identifier.split('@')[0],
-      'email': identifier,
-      'phone': '+2567XXXXXXXX',
-      'role': 'immediate',
-    };
-    
-    _isLoading = false;
-    notifyListeners();
-    
-    return {'success': true, 'message': 'Login successful'};
+    try {
+      final result = await _apiService.sessionLogin(email.trim(), password.trim());
+      
+      if (result['success'] == true) {
+        _isAuthenticated = true;
+        
+        final prefs = await SharedPreferences.getInstance();
+        _user = {
+          'full_name': prefs.getString('user_name') ?? (result['user'] != null ? result['user']['full_name'] : ''),
+          'email': prefs.getString('user_email') ?? email,
+          'phone': prefs.getString('user_phone') ?? (result['user'] != null ? result['user']['phone'] : ''),
+          'role': prefs.getString('user_role') ?? (result['user'] != null ? result['user']['user_type'] : 'immediate'),
+        };
+        
+        _isLoading = false;
+        notifyListeners();
+        return {'success': true, 'message': 'Login successful', 'user': _user};
+      } else {
+        _isLoading = false;
+        notifyListeners();
+        return {'success': false, 'message': result['message'] ?? 'Login failed'};
+      }
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      final cleanMessage = e.toString().replaceAll('Exception: ', '');
+      return {'success': false, 'message': cleanMessage};
+    }
   }
   
   Future<Map<String, dynamic>> register({
+    required String name,
     required String email,
     required String phone,
-    required String emailCode,
-    required String phoneCode,
     required String password,
-    required String fullName,
+    String? password2,
+    String? userType,
+    String? storeName,
+    String? businessAddress,
+    String? taxId,
   }) async {
     _isLoading = true;
     notifyListeners();
     
-    await Future.delayed(const Duration(seconds: 1));
-    
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    await prefs.setString('user_name', fullName);
-    await prefs.setString('user_email', email);
-    await prefs.setString('user_phone', phone);
-    await prefs.setString('user_role', 'immediate');
-    
-    _isAuthenticated = true;
-    _user = {
-      'full_name': fullName,
-      'email': email,
-      'phone': phone,
-      'role': 'immediate',
-    };
-    
-    _isLoading = false;
-    notifyListeners();
-    
-    return {'success': true, 'message': 'Registration successful'};
+    try {
+      final response = await _authService.register(
+        name: name,
+        email: email,
+        password: password,
+        phone: phone,
+        password2: password2,
+        userType: userType,
+        storeName: storeName,
+        businessAddress: businessAddress,
+        taxId: taxId,
+      );
+      
+      _isAuthenticated = true;
+      
+      final prefs = await SharedPreferences.getInstance();
+      _user = {
+        'full_name': prefs.getString('user_name') ?? name,
+        'email': prefs.getString('user_email') ?? email,
+        'phone': prefs.getString('user_phone') ?? phone,
+        'role': prefs.getString('user_role') ?? (userType ?? 'immediate'),
+      };
+      
+      _isLoading = false;
+      notifyListeners();
+      return {'success': true, 'message': 'Registration successful', 'user': response['user']};
+    } catch (e) {
+      _isLoading = false;
+      notifyListeners();
+      final cleanMessage = e.toString().replaceAll('Exception: ', '');
+      return {'success': false, 'message': cleanMessage};
+    }
   }
   
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.clear();
+    _isLoading = true;
+    notifyListeners();
     
+    try {
+      await _authService.logout();
+    } catch (e) {
+      print('Error during auth service logout: $e');
+    }
+    
+    await _apiService.clearSession();
     _isAuthenticated = false;
     _user = null;
+    _isLoading = false;
     notifyListeners();
   }
   
