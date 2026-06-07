@@ -8,6 +8,7 @@ import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import '../providers/cart_provider.dart';
 import '../services/notification_service.dart';
+import '../services/notification_websocket_service.dart';
 
 class MainAppScreen extends StatefulWidget {
   const MainAppScreen({super.key});
@@ -21,6 +22,7 @@ class MainAppScreenState extends State<MainAppScreen> {
   int _unreadCount = 0;
   late List<Widget> _screens;
   final NotificationService _notificationService = NotificationService();
+  final NotificationWebSocketService _notificationWs = NotificationWebSocketService();
 
   @override
   void initState() {
@@ -33,6 +35,26 @@ class MainAppScreenState extends State<MainAppScreen> {
     ];
     _loadUnreadCount();
     _startPolling();
+    // Connect to real-time notification websocket and update badge
+    _notificationWs.connect().then((connected) {
+      if (connected) {
+        _notificationWs.notifications.listen((payload) {
+          // increment unread count when a notification arrives
+          if (mounted) {
+            setState(() {
+              _unreadCount = (_unreadCount) + 1;
+            });
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _notificationWs.dispose();
+    _notificationService.dispose();
+    super.dispose();
   }
 
   void _loadUnreadCount() async {

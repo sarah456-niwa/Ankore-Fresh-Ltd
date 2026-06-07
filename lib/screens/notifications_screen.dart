@@ -34,6 +34,19 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       _notifications = notifications;
       _isLoading = false;
     });
+
+    // If there are unread notifications, mark them all as read immediately
+    final unread = _notifications.where((n) => n['is_read'] == false).toList();
+    if (unread.isNotEmpty) {
+      await _notificationService.markAllAsRead();
+      // Refresh list to reflect read status
+      final refreshed = await _notificationService.getUserNotifications();
+      if (mounted) {
+        setState(() {
+          _notifications = refreshed;
+        });
+      }
+    }
   }
 
   Future<void> _markAsRead(int id) async {

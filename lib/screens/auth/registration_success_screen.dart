@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../main_app_screen.dart';
 
 class RegistrationSuccessScreen extends StatefulWidget {
   final String userName;
@@ -17,10 +19,27 @@ class RegistrationSuccessScreen extends StatefulWidget {
 }
 
 class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
+  Timer? _autoNavTimer;
+  bool _navigated = false;
   @override
   void initState() {
     super.initState();
-    // Auto-dismiss after 3 seconds if user doesn't interact
+    // Auto-navigate to home after 3 seconds if user doesn't interact
+    _autoNavTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted && !_navigated) {
+        _navigated = true;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MainAppScreen()),
+          (route) => false,
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoNavTimer?.cancel();
+    super.dispose();
   }
 
   @override
@@ -221,11 +240,15 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen> {
                       width: double.infinity,
                       child: ElevatedButton(
                         onPressed: () {
-                          // Auto-navigate to home/products after 3 seconds
-                          Navigator.of(context).pushNamedAndRemoveUntil(
-                            '/home',
-                            (route) => false,
-                          );
+                          if (!_navigated) {
+                            _navigated = true;
+                            _autoNavTimer?.cancel();
+                            // Navigate to main app screen (clear stack)
+                            Navigator.of(context).pushAndRemoveUntil(
+                              MaterialPageRoute(builder: (_) => const MainAppScreen()),
+                              (route) => false,
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
