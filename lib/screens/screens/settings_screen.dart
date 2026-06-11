@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/api_service.dart';
+import '../../services/api_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -32,7 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _isTesting = true;
     });
 
-    final success = await ApiService._testConnection(_urlController.text);
+    final success = await ApiService.testConnection(_urlController.text);
     
     setState(() {
       _isTesting = false;

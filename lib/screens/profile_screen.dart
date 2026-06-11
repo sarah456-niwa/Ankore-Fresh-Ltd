@@ -3,7 +3,13 @@ import 'package:provider/provider.dart';
 import '../providers/user_provider.dart';
 import 'auth/login_screen.dart';
 import 'auth/logout_screen.dart';
+import 'auth/forgot_password_screen.dart';
+import 'auth/change_password_screen.dart';
 import 'edit_profile_screen.dart';
+import 'delivery_address_screen.dart';
+import 'order_history_screen.dart';
+import 'favorites_screen.dart';
+import 'screens/settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -216,7 +222,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Delivery Address',
             onTap: () {
               if (isLoggedIn) {
-                _showComingSoon(context, 'Delivery Address');
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DeliveryAddressScreen())).then((_) => context.read<UserProvider>().refreshUserData());
               } else {
                 _showLoginRequired(context);
               }
@@ -228,7 +234,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Change Password',
             onTap: () {
               if (isLoggedIn) {
-                _showComingSoon(context, 'Change Password');
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangePasswordScreen()));
               } else {
                 _showLoginRequired(context);
               }
@@ -240,7 +246,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Order History',
             onTap: () {
               if (isLoggedIn) {
-                _showComingSoon(context, 'Order History');
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const OrderHistoryScreen()));
               } else {
                 _showLoginRequired(context);
               }
@@ -252,7 +258,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             'Favorites',
             onTap: () {
               if (isLoggedIn) {
-                _showComingSoon(context, 'Favorites');
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const FavoritesScreen()));
               } else {
                 _showLoginRequired(context);
               }
@@ -263,7 +269,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Icons.settings_outlined,
             'Settings',
             onTap: () {
-              _showComingSoon(context, 'Settings');
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
             },
           ),
           
@@ -367,15 +373,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature - Coming Soon'),
-        backgroundColor: Colors.orange,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+  // All profile features are implemented; no placeholder messages remain.
 
   void _showHelpDialog() {
     showDialog(

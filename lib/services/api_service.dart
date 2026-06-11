@@ -25,9 +25,21 @@ class ApiService {
   
   // Get base URL - Simplified for Chrome/Windows testing
   static Future<String> get baseUrl async {
-    // For Chrome/Windows testing on same PC
-    // This works when Django is running on localhost:8000
-    return 'http://localhost:8000/api';
+    // Prefer in-memory override, then persisted setting, then localhost
+    if (_baseUrl.isNotEmpty) return _baseUrl;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final saved = prefs.getString('backend_url');
+      if (saved != null && saved.isNotEmpty) {
+        _baseUrl = saved;
+        return _baseUrl;
+      }
+    } catch (e) {
+      // ignore and fall back
+    }
+    // Default for local dev
+    _baseUrl = 'http://localhost:8000/api';
+    return _baseUrl;
   }
   
   static Future<bool> _testConnection(String url) async {
@@ -43,6 +55,11 @@ class ApiService {
       print('Connection failed to $url: $e');
       return false;
     }
+  }
+
+  // Public wrapper for testing connection from other files
+  static Future<bool> testConnection(String url) async {
+    return await _testConnection(url);
   }
   
   static Future<String?> _getComputerName() async {
@@ -212,7 +229,13 @@ class ApiService {
         if (response.body.isEmpty) {
           return null;
         }
-        return json.decode(response.body);
+        try {
+          return json.decode(response.body);
+        } catch (e) {
+          final snippet = response.body.length > 500 ? response.body.substring(0, 500) : response.body;
+          // If the server returned HTML (for example an error page), include helpful context
+          throw Exception('Expected JSON but received status ${response.statusCode} with body:\n${snippet}');
+        }
       case 400:
         try {
           final error = json.decode(response.body);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/favorites_provider.dart';
 import '../models/product.dart';
 import '../services/product_service.dart';
 import '../providers/cart_provider.dart';
@@ -197,7 +198,22 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             foregroundColor: Colors.white,
             leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
             actions: [
-              IconButton(icon: const Icon(Icons.favorite_border), onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Added to wishlist'), backgroundColor: Colors.green))),
+              IconButton(
+                icon: Icon(
+                  Provider.of<FavoritesProvider>(context, listen: true).isFavorite(widget.product.id.toString()) ? Icons.favorite : Icons.favorite_border,
+                  color: Colors.white,
+                ),
+                onPressed: () async {
+                  final fav = Provider.of<FavoritesProvider>(context, listen: false);
+                  await fav.toggleFavorite(widget.product.id.toString());
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(fav.isFavorite(widget.product.id.toString()) ? 'Added to favorites' : 'Removed from favorites'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+              ),
               IconButton(icon: const Icon(Icons.share), onPressed: () {}),
               IconButton(icon: const Icon(Icons.shopping_cart), onPressed: () {
                 final mainAppScreen = context.findAncestorStateOfType<MainAppScreenState>();

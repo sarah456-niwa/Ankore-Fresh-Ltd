@@ -60,6 +60,17 @@ class UserProvider extends ChangeNotifier {
         
         _isLoading = false;
         notifyListeners();
+
+        // Merge local favorites to server after login
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          final localFavs = prefs.getStringList('favorites') ?? [];
+          for (final id in localFavs) {
+            try {
+              await _apiService.post('auth/favorites/', {'product_id': id});
+            } catch (_) {}
+          }
+        } catch (_) {}
         return {'success': true, 'message': 'Login successful', 'user': _user};
       } else {
         _isLoading = false;
