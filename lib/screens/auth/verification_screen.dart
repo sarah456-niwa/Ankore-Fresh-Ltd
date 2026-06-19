@@ -1,9 +1,17 @@
+// lib/screens/auth/verification_screen.dart
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import '../main_app_screen.dart';
+import '../../services/api_service.dart';
+import 'reset_password_screen.dart';
 
 class VerificationScreen extends StatefulWidget {
-  const VerificationScreen({super.key});
+  final String? email;
+  final String? verificationType;
+  
+  const VerificationScreen({
+    super.key,
+    this.email,
+    this.verificationType = 'password_reset',
+  });
 
   @override
   State<VerificationScreen> createState() => _VerificationScreenState();
@@ -11,6 +19,7 @@ class VerificationScreen extends StatefulWidget {
 
 class _VerificationScreenState extends State<VerificationScreen> {
   late List<TextEditingController> _otpControllers;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -26,40 +35,108 @@ class _VerificationScreenState extends State<VerificationScreen> {
     super.dispose();
   }
 
-  Future<void> _handleVerification() async {
-    await Future.delayed(const Duration(seconds: 1));
-    
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('is_logged_in', true);
-    
-    if (context.mounted) {
+  Future<void> _verifyCode() async {
+    String otp = _otpControllers.map((c) => c.text).join();
+    if (otp.length != 6) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.white),
-              SizedBox(width: 10),
-              Expanded(child: Text('Registration Successful! Welcome to Ankore Fresh!')),
-            ],
-          ),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
+          content: Text('Please enter the 6-digit verification code'),
+          backgroundColor: Colors.red,
         ),
       );
+      return;
+    }
+    
+    setState(() {
+      _isLoading = true;
+    });
+    
+    final apiService = ApiService();
+    
+    try {
+      final response = await apiService.post('password-reset/verify-code/', {
+        'email': widget.email,
+        'code': otp,
+      });
       
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainAppScreen()),
+      setState(() {
+        _isLoading = false;
+      });
+      
+      if (response['success']) {
+        // Navigate to reset password screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResetPasswordScreen(
+              email: widget.email!,
+              code: otp,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response['message'] ?? 'Invalid verification code'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Network error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _resendCode() async {
+    setState(() {
+      _isLoading = true;
+    });
+    
+    final apiService = ApiService();
+    
+    try {
+      final response = await apiService.post('password-reset/forgot-password/', {
+        'email': widget.email,
+      });
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response['message'] ?? 'New code sent!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to resend code'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isPasswordReset = widget.verificationType == 'password_reset';
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Verification'),
+        title: Text(isPasswordReset ? 'Reset Password' : 'Verify Email'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.green,
@@ -84,21 +161,24 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 ),
               ),
               const SizedBox(height: 30),
-              const Text(
-                'Verify Your Email',
-                style: TextStyle(
+              Text(
+                isPasswordReset ? 'Reset Your Password' : 'Verify Your Email',
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: Colors.green,
                 ),
               ),
               const SizedBox(height: 10),
-              const Text(
-                'We have sent a 6-digit verification code to your email',
-                style: TextStyle(
+              Text(
+                isPasswordReset
+                    ? 'We have sent a 6-digit verification code to:\n\n${widget.email}'
+                    : 'We have sent a 6-digit verification code to your email',
+                style: const TextStyle(
                   fontSize: 16,
                   color: Colors.grey,
                 ),
+                textAlign: TextAlign.center,
               ),
               const SizedBox(height: 40),
               
@@ -136,7 +216,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
               
               const SizedBox(height: 40),
               ElevatedButton(
-                onPressed: _handleVerification,
+                onPressed: _isLoading ? null : _verifyCode,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -145,10 +225,19 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),
-                child: const Text(
-                  'Verify Code',
-                  style: TextStyle(fontSize: 18),
-                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Verify Code',
+                        style: TextStyle(fontSize: 18),
+                      ),
               ),
               
               const SizedBox(height: 20),
@@ -160,14 +249,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                   TextButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('New code sent!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
+                    onPressed: _isLoading ? null : _resendCode,
                     child: const Text(
                       'Resend',
                       style: TextStyle(

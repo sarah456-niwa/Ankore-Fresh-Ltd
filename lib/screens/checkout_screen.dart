@@ -122,9 +122,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
     
     if (result['success']) {
-      // Clear cart
-      cartProvider.clearCart();
-      
+      // Create a copy of cart items for the local order before clearing the cart
+      final copiedItems = cartProvider.items.map((cartItem) => OrderItem(
+        id: 0,
+        productName: cartItem.product.name,
+        productId: cartItem.product.id,
+        price: cartItem.product.price,
+        quantity: cartItem.quantity,
+        subtotal: cartItem.totalPrice,
+        productImage: null,
+      )).toList();
+
       // Create a local order object for tracking (no API call needed)
       final localOrder = Order(
         id: result['order_id'] ?? 0,
@@ -143,15 +151,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         discount: 0,
         tax: tax,
         total: grandTotal,
-        items: cartProvider.items.map((cartItem) => OrderItem(
-          id: 0,
-          productName: cartItem.product.name,
-          productId: cartItem.product.id,
-          price: cartItem.product.price,
-          quantity: cartItem.quantity,
-          subtotal: cartItem.totalPrice,
-          productImage: null,
-        )).toList(),
+        items: copiedItems,
         createdAt: DateTime.now(),
         estimatedDelivery: DateTime.now().add(const Duration(days: 3)),
         trackingNumber: null,
@@ -161,16 +161,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         deliveryAgent: null,
         trackingHistory: [],
       );
-      
+
+      // Clear cart only after building the local order
+      cartProvider.clearCart();
+
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => OrderSuccessScreen(
-              order: localOrder,  // Pass the order object directly
+        try {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OrderSuccessScreen(
+                order: localOrder, // Pass the order object directly
+              ),
             ),
-          ),
-        );
+          );
+        } catch (e, st) {
+          // Log navigation errors for debugging
+          print('❌ Navigation error after placing order: $e');
+          print(st);
+        }
       }
     } else {
       // Show error
